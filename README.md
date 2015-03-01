@@ -1,10 +1,10 @@
-# USER MANAGEMENT
+# INTERNAL LASALLECMS API
 
-[![Build Status](https://img.shields.io/travis/lasallecms/lasallecms-l5-usermanagement-pkg/master.svg?style=flat-square)](https://travis-ci.org/lasallecms/lasallecms-l5-usermanagement-pkg)
-[![Total Downloads](https://img.shields.io/packagist/dt/lasallecms/usermanagement.svg?style=flat-square)](https://packagist.org/packages/lasallecms/usermanagement)
-[![Latest Stable Version](https://poser.pugx.org/lasallecms/usermanagement/v/stable.svg)](https://packagist.org/packages/lasallecms/usermanagement)
-[![Latest Unstable Version](https://poser.pugx.org/lasallecms/usermanagement/v/unstable.svg)](https://packagist.org/packages/lasallecms/usermanagement)
-[![GitHub Issues](https://img.shields.io/github/issues/lasallecms/lasallecms-l5-usermanagement-pkg.svg)](https://github.com/lasallecms/lasallecms-l5-usermanagement-pkg/issues)
+[![Build Status](https://img.shields.io/travis/lasallecms/lasallecms-l5-lasallecmsapi-pkg/master.svg?style=flat-square)](https://travis-ci.org/lasallecms/lasallecms-l5-lasallecmsapi-pkg)
+[![Total Downloads](https://img.shields.io/packagist/dt/lasallecms/lasallecmsapi.svg?style=flat-square)](https://packagist.org/packages/lasallecms/lasallecmsapi)
+[![Latest Stable Version](https://poser.pugx.org/lasallecms/lasallecmsapi/v/stable.svg)](https://packagist.org/packages/lasallecms/lasallecmsapi)
+[![Latest Unstable Version](https://poser.pugx.org/lasallecms/lasallecmsapi/v/unstable.svg)](https://packagist.org/packages/lasallecms/lasallecmsapi)
+[![GitHub Issues](https://img.shields.io/github/issues/lasallecms/lasallecms-l5-lasallecmsapi-pkg.svg)](https://github.com/lasallecms/lasallecms-l5-lasallecmsapi-pkg/issues)
 [![Software License](https://img.shields.io/badge/license-GPLv3-brightgreen.svg?style=flat-square)](LICENSE.md)
 [![Laravel](https://img.shields.io/badge/Laravel-v5-brightgreen.svg?style=flat-square)](http://laravel.com)
 
