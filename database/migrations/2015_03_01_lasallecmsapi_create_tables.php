@@ -41,53 +41,87 @@ class LasallecmsSetupUsersTable extends Migration {
 	 */
 	public function up()
     {
-        if (!Schema::hasTable('users'))
+        if (!Schema::hasTable('categories'))
         {
-            Schema::create('users', function (Blueprint $table)
-            {
-                $table->engine = 'InnoDB';
-
-                $table->increments('id')->unsigned();
-
-                $table->string('name');
-                $table->string('email')->unique();
-                $table->string('password', 60);
-                $table->rememberToken();
-                $table->boolean('activated')->default(true);
-                $table->dateTime('last_login')->nullable();
-
-                $table->boolean('enabled')->default(true);;
-
-                $table->timestamp('created_at');
-                $table->timestamp('updated_at');
-
-                $table->timestamp('locked_at')->nullable();
-                $table->integer('locked_by')->nullable();
-            });
-        }
-
-
-        if (!Schema::hasTable('password_resets'))
-        {
-            Schema::create('password_resets', function (Blueprint $table)
-            {
-                $table->string('email')->index();
-                $table->string('token')->index();
-                $table->timestamp('created_at');
-            });
-        }
-
-
-        if (!Schema::hasTable('groups'))
-        {
-            Schema::create('groups', function (Blueprint $table)
+            Schema::create('categories', function (Blueprint $table)
             {
                 $table->engine = 'InnoDB';
 
                 $table->increments('id')->unsigned();
 
                 $table->string('title')->unique();
+                $table->string('slug')->unique;
                 $table->string('description');
+
+                $table->boolean('enabled')->default(true);;
+
+                $table->timestamp('created_at');
+                $table->integer('created_by')->unsigned();
+                $table->foreign('created_by')->references('id')->on('users');
+
+                $table->timestamp('updated_at');
+                $table->integer('updated_by')->unsigned();
+                $table->foreign('updated_by')->references('id')->on('users');
+
+                $table->timestamp('locked_at')->nullable();
+                $table->integer('locked_by')->nullable()->unsigned();
+                $table->foreign('locked_by')->references('id')->on('users');
+            });
+        }
+
+
+        if (!Schema::hasTable('tags'))
+        {
+            Schema::create('tags', function (Blueprint $table)
+            {
+                $table->engine = 'InnoDB';
+
+                $table->increments('id')->unsigned();
+
+                $table->string('title')->unique();
+                $table->string('slug')->unique;
+                $table->string('description');
+
+                $table->boolean('enabled')->default(true);;
+
+                $table->timestamp('created_at');
+                $table->integer('created_by')->unsigned();
+                $table->foreign('created_by')->references('id')->on('users');
+
+                $table->timestamp('updated_at');
+                $table->integer('updated_by')->unsigned();
+                $table->foreign('updated_by')->references('id')->on('users');
+
+                $table->timestamp('locked_at')->nullable();
+                $table->integer('locked_by')->nullable()->unsigned();
+                $table->foreign('locked_by')->references('id')->on('users');
+            });
+        }
+
+
+
+
+        if (!Schema::hasTable('posts'))
+        {
+            Schema::create('posts', function (Blueprint $table)
+            {
+                $table->engine = 'InnoDB';
+
+                $table->increments('id')->unsigned();
+
+                $table->integer('user_id')->unsigned();
+                // Yes, just one category per post
+                $table->integer('category_id')->unsigned();
+
+                $table->string('title');
+                $table->string('slug')->unique();
+                $table->text('content');
+                $table->text('excerpt');
+                $table->string('meta_title');
+                $table->string('meta_description');
+                $table->string('meta_keywords');
+                $table->boolean('publish');
+                $table->string('featured_image');
 
 
                 $table->boolean('enabled')->default(true);
@@ -132,20 +166,28 @@ class LasallecmsSetupUsersTable extends Migration {
 	 */
 	public function down()
 	{
-        Schema::dropIfExists('user_groups');
-        Schema::table('user_groups', function($table){
-            $table->drop_index('user_groups_user_id_index');
-            $table->drop_index('user_groups_group_id_index');
+        Schema::dropIfExists('categories');
+        Schema::table('categories', function($table){
+            $table->drop_index('categories_title_unique');
+            $table->drop_index('categories_slug_unique');
+        });
+
+        Schema::dropIfExists('tags');
+        Schema::table('tags', function($table){
+            $table->drop_index('tags_title_unique');
+            $table->drop_index('tags_slug_unique');
         });
 
 
-        Schema::dropIfExists('groups');
-        Schema::table('groups', function($table){
-            $table->drop_index('groups_title_unique');
+        Schema::dropIfExists('posts');
+        Schema::table('posts', function($table){
+            $table->drop_index('posts_user_id_foreign');
+            $table->drop_index('posts_category_id_foreign');
+            $table->drop_foreign('posts_user_id_foreign');
+            $table->drop_foreign('posts_category_id_foreign');
         });
 
 
-        Schema::drop('password_resets');
 
 
         Schema::dropIfExists('users');
