@@ -1,4 +1,4 @@
-<?php
+<?php namespace Lasallecms\Lasallecmsapi;
 
 /**
  *
@@ -39,7 +39,7 @@ use Illuminate\Support\ServiceProvider;
  *
  * @author Bob Bloom <info@southlasalle.com>
  */
-class UsermanagementServiceProvider extends ServiceProvider {
+class LasallecmsapiServiceProvider extends ServiceProvider {
 
     /**
      * Indicates if loading of the provider is deferred.
@@ -60,8 +60,6 @@ class UsermanagementServiceProvider extends ServiceProvider {
 
         $this->setupMigrations();
         $this->setupSeeds();
-
-        $this->setupRoutes($this->app->router);
     }
 
     /**
