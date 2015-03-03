@@ -99,8 +99,6 @@ class LasallecmsSetupUsersTable extends Migration {
         }
 
 
-
-
         if (!Schema::hasTable('posts'))
         {
             Schema::create('posts', function (Blueprint $table)
@@ -109,9 +107,9 @@ class LasallecmsSetupUsersTable extends Migration {
 
                 $table->increments('id')->unsigned();
 
-                $table->integer('user_id')->unsigned();
                 // Yes, just one category per post
                 $table->integer('category_id')->unsigned();
+                $table->foreign('category_id')->references('id')->on('categories');
 
                 $table->string('title');
                 $table->string('slug')->unique();
@@ -120,9 +118,7 @@ class LasallecmsSetupUsersTable extends Migration {
                 $table->string('meta_title');
                 $table->string('meta_description');
                 $table->string('meta_keywords');
-                $table->boolean('publish');
                 $table->string('featured_image');
-
 
                 $table->boolean('enabled')->default(true);
 
@@ -141,18 +137,50 @@ class LasallecmsSetupUsersTable extends Migration {
         }
 
 
-        if (!Schema::hasTable('user_groups'))
+        if (!Schema::hasTable('post_tags'))
         {
-            Schema::create('user_groups', function (Blueprint $table)
+            Schema::create('post_tags', function (Blueprint $table)
             {
                 $table->engine = 'InnoDB';
 
                 $table->increments('id')->unsigned();
 
-                $table->integer('user_id')->unsigned()->index();
-                $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-                $table->integer('group_id')->unsigned()->index();
-                $table->foreign('group_id')->references('id')->on('groups')->onDelete('cascade');
+                $table->integer('post_id')->unsigned()->index();
+                $table->foreign('post_id')->references('id')->on('posts')->onDelete('cascade');
+                $table->integer('tag_id')->unsigned()->index();
+                $table->foreign('tag_id')->references('id')->on('tags')->onDelete('cascade');
+            });
+        }
+
+
+        if (!Schema::hasTable('postupdates'))
+        {
+            Schema::create('postupdates', function (Blueprint $table)
+            {
+                $table->engine = 'InnoDB';
+
+                $table->increments('id')->unsigned();
+
+                $table->integer('post_id')->unsigned();
+                $table->foreign('post_id')->references('id')->on('posts');
+
+                $table->string('title')->unique();
+                $table->text('content');
+                $table->text('excerpt');
+
+                $table->boolean('enabled')->default(true);
+
+                $table->timestamp('created_at');
+                $table->integer('created_by')->unsigned();
+                $table->foreign('created_by')->references('id')->on('users');
+
+                $table->timestamp('updated_at');
+                $table->integer('updated_by')->unsigned();
+                $table->foreign('updated_by')->references('id')->on('users');
+
+                $table->timestamp('locked_at')->nullable();
+                $table->integer('locked_by')->nullable()->unsigned();
+                $table->foreign('locked_by')->references('id')->on('users');
             });
         }
 
@@ -170,29 +198,45 @@ class LasallecmsSetupUsersTable extends Migration {
         Schema::table('categories', function($table){
             $table->drop_index('categories_title_unique');
             $table->drop_index('categories_slug_unique');
+            $table->drop_foreign('categories_created_by_foreign');
+            $table->drop_foreign('categories_updated_by_foreign');
+            $table->drop_foreign('categories_locked_by_foreign');
         });
 
         Schema::dropIfExists('tags');
         Schema::table('tags', function($table){
             $table->drop_index('tags_title_unique');
             $table->drop_index('tags_slug_unique');
+            $table->drop_foreign('tags_created_by_foreign');
+            $table->drop_foreign('tags_updated_by_foreign');
+            $table->drop_foreign('tags_locked_by_foreign');
         });
-
 
         Schema::dropIfExists('posts');
         Schema::table('posts', function($table){
-            $table->drop_index('posts_user_id_foreign');
+            $table->drop_index('posts_title_unique');
+            $table->drop_index('posts_slug_unique');
             $table->drop_index('posts_category_id_foreign');
-            $table->drop_foreign('posts_user_id_foreign');
             $table->drop_foreign('posts_category_id_foreign');
+            $table->drop_foreign('posts_created_by_foreign');
+            $table->drop_foreign('posts_updated_by_foreign');
+            $table->drop_foreign('posts_locked_by_foreign');
         });
 
+        Schema::dropIfExists('post_tags');
+        Schema::table('post_tags', function($table){
+            $table->drop_index('post_tags_post_id_index');
+            $table->drop_foreign('post_tags_post_id_foreign');
+            $table->drop_index('post_tags_tag_id_index');
+            $table->drop_foreign('post_tags_tag_id_foreign');
+        });
 
-
-
-        Schema::dropIfExists('users');
-        Schema::table('users', function($table){
-            $table->drop_index('users_email_unique');
+        Schema::dropIfExists('postupdates');
+        Schema::table('postupdates', function($table){
+            $table->drop_foreign('postupdates_post_id_foreign');
+            $table->drop_foreign('postupdates_created_by_foreign');
+            $table->drop_foreign('postupdates_updated_by_foreign');
+            $table->drop_foreign('postupdates_locked_by_foreign');
         });
 	}
 
