@@ -2,7 +2,7 @@
 
 /**
  *
- * User Management package for the LaSalle Content Management System, based on the Laravel 5 Framework
+ * Internal API package for the LaSalle Content Management System, based on the Laravel 5 Framework
  * Copyright (C) 2015  The South LaSalle Trading Corporation
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  *
- * @package    User Management package for the LaSalle Content Management System
+ * @package    Internal API package for the LaSalle Content Management System
  * @version    1.0.0
  * @link       http://LaSalleCMS.com
  * @copyright  (c) 2015, The South LaSalle Trading Corporation
@@ -32,7 +32,7 @@
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class LasallecmsSetupUsersTable extends Migration {
+class CreateTables extends Migration {
 
 	/**
 	 * Run the migrations.
@@ -49,8 +49,9 @@ class LasallecmsSetupUsersTable extends Migration {
 
                 $table->increments('id')->unsigned();
 
+                $table->integer('parent_id')->unsigned()->default(0);
+
                 $table->string('title')->unique();
-                $table->string('slug')->unique;
                 $table->string('description');
 
                 $table->boolean('enabled')->default(true);;
@@ -79,7 +80,6 @@ class LasallecmsSetupUsersTable extends Migration {
                 $table->increments('id')->unsigned();
 
                 $table->string('title')->unique();
-                $table->string('slug')->unique;
                 $table->string('description');
 
                 $table->boolean('enabled')->default(true);;
@@ -107,17 +107,11 @@ class LasallecmsSetupUsersTable extends Migration {
 
                 $table->increments('id')->unsigned();
 
-                // Yes, just one category per post
-                $table->integer('category_id')->unsigned();
-                $table->foreign('category_id')->references('id')->on('categories');
-
                 $table->string('title');
                 $table->string('slug')->unique();
                 $table->text('content');
                 $table->text('excerpt');
-                $table->string('meta_title');
                 $table->string('meta_description');
-                $table->string('meta_keywords');
                 $table->string('featured_image');
 
                 $table->boolean('enabled')->default(true);
@@ -137,9 +131,25 @@ class LasallecmsSetupUsersTable extends Migration {
         }
 
 
-        if (!Schema::hasTable('post_tags'))
+        if (!Schema::hasTable('post_category'))
         {
-            Schema::create('post_tags', function (Blueprint $table)
+            Schema::create('post_category', function (Blueprint $table)
+            {
+                $table->engine = 'InnoDB';
+
+                $table->increments('id')->unsigned();
+
+                $table->integer('post_id')->unsigned()->index();
+                $table->foreign('post_id')->references('id')->on('categories')->onDelete('cascade');
+                $table->integer('category_id')->unsigned()->index();
+                $table->foreign('category_id')->references('id')->on('categories')->onDelete('cascade');
+            });
+        }
+
+
+        if (!Schema::hasTable('post_tag'))
+        {
+            Schema::create('post_tag', function (Blueprint $table)
             {
                 $table->engine = 'InnoDB';
 
@@ -194,10 +204,26 @@ class LasallecmsSetupUsersTable extends Migration {
 	 */
 	public function down()
 	{
+        Schema::dropIfExists('post_tag');
+        Schema::table('post_tags', function($table){
+            $table->drop_index('post_tag_post_id_index');
+            $table->drop_foreign('post_tag_post_id_foreign');
+            $table->drop_index('post_tag_tag_id_index');
+            $table->drop_foreign('post_tag_tag_id_foreign');
+        });
+
+        Schema::dropIfExists('post_category');
+        Schema::table('post_category', function($table){
+            $table->drop_index('post_category_post_id_index');
+            $table->drop_foreign('post_category_post_id_foreign');
+            $table->drop_index('post_category_tag_id_index');
+            $table->drop_foreign('post_category_tag_id_foreign');
+        });
+
         Schema::dropIfExists('categories');
         Schema::table('categories', function($table){
             $table->drop_index('categories_title_unique');
-            $table->drop_index('categories_slug_unique');
+            $table->drop_foreign('categories_parent_id_foreign');
             $table->drop_foreign('categories_created_by_foreign');
             $table->drop_foreign('categories_updated_by_foreign');
             $table->drop_foreign('categories_locked_by_foreign');
@@ -206,7 +232,6 @@ class LasallecmsSetupUsersTable extends Migration {
         Schema::dropIfExists('tags');
         Schema::table('tags', function($table){
             $table->drop_index('tags_title_unique');
-            $table->drop_index('tags_slug_unique');
             $table->drop_foreign('tags_created_by_foreign');
             $table->drop_foreign('tags_updated_by_foreign');
             $table->drop_foreign('tags_locked_by_foreign');
@@ -221,14 +246,6 @@ class LasallecmsSetupUsersTable extends Migration {
             $table->drop_foreign('posts_created_by_foreign');
             $table->drop_foreign('posts_updated_by_foreign');
             $table->drop_foreign('posts_locked_by_foreign');
-        });
-
-        Schema::dropIfExists('post_tags');
-        Schema::table('post_tags', function($table){
-            $table->drop_index('post_tags_post_id_index');
-            $table->drop_foreign('post_tags_post_id_foreign');
-            $table->drop_index('post_tags_tag_id_index');
-            $table->drop_foreign('post_tags_tag_id_foreign');
         });
 
         Schema::dropIfExists('postupdates');
