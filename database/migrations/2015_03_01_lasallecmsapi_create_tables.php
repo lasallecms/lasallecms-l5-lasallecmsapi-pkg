@@ -204,57 +204,65 @@ class CreateTables extends Migration {
 	 */
 	public function down()
 	{
-        Schema::dropIfExists('post_tag');
-        Schema::table('post_tags', function($table){
-            $table->drop_index('post_tag_post_id_index');
-            $table->drop_foreign('post_tag_post_id_foreign');
-            $table->drop_index('post_tag_tag_id_index');
-            $table->drop_foreign('post_tag_tag_id_foreign');
-        });
+        // Disable foreign key constraints or these DROPs will not work
+        DB::statement('SET FOREIGN_KEY_CHECKS = 0');
 
+
+		Schema::table('post_tag', function($table){
+		    $table->dropIndex('post_tag_post_id_index');
+		    $table->dropForeign('post_tag_post_id_foreign');
+		    $table->dropIndex('post_tag_tag_id_index');
+		    $table->dropForeign('post_tag_tag_id_foreign');
+		});
+		Schema::dropIfExists('post_tag');
+
+
+		Schema::table('post_category', function($table){
+		    $table->dropIndex('post_category_post_id_index');
+		    $table->dropForeign('post_category_post_id_foreign');
+		    $table->dropIndex('post_category_category_id_index');
+		    $table->dropForeign('post_category_category_id_foreign');
+		});
         Schema::dropIfExists('post_category');
-        Schema::table('post_category', function($table){
-            $table->drop_index('post_category_post_id_index');
-            $table->drop_foreign('post_category_post_id_foreign');
-            $table->drop_index('post_category_tag_id_index');
-            $table->drop_foreign('post_category_tag_id_foreign');
-        });
 
+
+		Schema::table('categories', function($table){
+		    $table->dropIndex('categories_title_unique');
+		    $table->dropForeign('categories_created_by_foreign');
+		    $table->dropForeign('categories_updated_by_foreign');
+		    $table->dropForeign('categories_locked_by_foreign');
+		});
         Schema::dropIfExists('categories');
-        Schema::table('categories', function($table){
-            $table->drop_index('categories_title_unique');
-            $table->drop_foreign('categories_parent_id_foreign');
-            $table->drop_foreign('categories_created_by_foreign');
-            $table->drop_foreign('categories_updated_by_foreign');
-            $table->drop_foreign('categories_locked_by_foreign');
-        });
 
+
+		Schema::table('tags', function($table){
+		    $table->dropIndex('tags_title_unique');
+		    $table->dropForeign('tags_created_by_foreign');
+		    $table->dropForeign('tags_updated_by_foreign');
+		    $table->dropForeign('tags_locked_by_foreign');
+		});
         Schema::dropIfExists('tags');
-        Schema::table('tags', function($table){
-            $table->drop_index('tags_title_unique');
-            $table->drop_foreign('tags_created_by_foreign');
-            $table->drop_foreign('tags_updated_by_foreign');
-            $table->drop_foreign('tags_locked_by_foreign');
-        });
 
+
+		Schema::table('posts', function($table){
+		    $table->dropIndex('posts_slug_unique');
+		    $table->dropForeign('posts_created_by_foreign');
+		    $table->dropForeign('posts_updated_by_foreign');
+		    $table->dropForeign('posts_locked_by_foreign');
+		});
         Schema::dropIfExists('posts');
-        Schema::table('posts', function($table){
-            $table->drop_index('posts_title_unique');
-            $table->drop_index('posts_slug_unique');
-            $table->drop_index('posts_category_id_foreign');
-            $table->drop_foreign('posts_category_id_foreign');
-            $table->drop_foreign('posts_created_by_foreign');
-            $table->drop_foreign('posts_updated_by_foreign');
-            $table->drop_foreign('posts_locked_by_foreign');
-        });
 
+
+		Schema::table('postupdates', function($table){
+		    $table->dropForeign('postupdates_post_id_foreign');
+		    $table->dropForeign('postupdates_created_by_foreign');
+		    $table->dropForeign('postupdates_updated_by_foreign');
+		    $table->dropForeign('postupdates_locked_by_foreign');
+		});
         Schema::dropIfExists('postupdates');
-        Schema::table('postupdates', function($table){
-            $table->drop_foreign('postupdates_post_id_foreign');
-            $table->drop_foreign('postupdates_created_by_foreign');
-            $table->drop_foreign('postupdates_updated_by_foreign');
-            $table->drop_foreign('postupdates_locked_by_foreign');
-        });
+
+        // Enable foreign key constraints
+        DB::statement('SET FOREIGN_KEY_CHECKS = 1');
 	}
 
 
