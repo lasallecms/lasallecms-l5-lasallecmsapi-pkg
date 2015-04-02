@@ -40,6 +40,46 @@ class Tag extends BaseModel {
     protected $fillable = ['title', 'description', 'enabled'];
 
 
+    /**
+     * Sanitation rules for Create (INSERT) db operation
+     *
+     * @var array
+     */
+    public $sanitationRulesForCreate = [
+        'title'       => 'trim|strip_tags',
+        'description' => 'trim',
+    ];
+
+    /**
+     * Sanitation rules for Update db operation
+     *
+     * @var array
+     */
+    public $sanitationRulesForUpdate = [
+        'description' => 'trim',
+    ];
+
+
+    /**
+     * Create validation rules for admin tags
+     *
+     * @var array
+     */
+    public $validationRulesForCreate = [
+        'title'       => 'required|min:4|unique:tags',
+        'description' => 'required|min:4',
+    ];
+
+    /**
+     * Update validation rules for admin tags
+     *
+     * @var array
+     */
+    public $validationRulesForUpdate = [
+        'description' => 'required|min:4',
+    ];
+
+
     /*
      * Many tags per single post
      *

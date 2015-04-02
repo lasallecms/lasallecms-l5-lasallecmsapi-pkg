@@ -115,6 +115,13 @@ class LasallecmsapiServiceProvider extends ServiceProvider {
     public function register()
     {
         $this->registerLasallecmsapi();
+
+        // Bind repository interfaces with their implementations
+        //$this->registerCategory();
+        //$this->registerPost();
+        //$this->registerPostupdate();
+        $this->registerTag();
+        //$this->registerUser();
     }
 
 
@@ -129,6 +136,69 @@ class LasallecmsapiServiceProvider extends ServiceProvider {
             return new Lasallecmsapi($app);
         });
     }
+
+
+    /**
+     * Register the Category service provider.
+     *
+     * @return void
+     */
+    public function registerCategory()
+    {
+        $this->app->bind(
+            'Lasallecms\Repositories\CategoryRepositoryInterface',
+            'Lasallecms\Repositories\CategoryRepositoryEloquent'
+        );
+    }
+    /**
+     * Register the POST service provider.
+     *
+     * @return void
+     */
+    public function registerPost()
+    {
+        $this->app->bind(
+            'Lasallecms\Repositories\PostRepositoryInterface',
+            'Lasallecms\Repositories\PostRepositoryEloquent'
+        );
+    }
+    /**
+     * Register the POSTUPDATE service provider.
+     *
+     * @return void
+     */
+    public function registerPostupdate()
+    {
+        $this->app->bind(
+            'Lasallecms\Repositories\PostupdateRepositoryInterface',
+            'Lasallecms\Repositories\PostupdateRepositoryEloquent'
+        );
+    }
+    /**
+     * Register the Tag service provider.
+     *
+     * @return void
+     */
+    public function registerTag()
+    {
+        $this->app->bind(
+            'Lasallecms\Lasallecmsapi\Contracts\TagRepository',
+            'Lasallecms\Lasallecmsapi\Repositories\TagEloquent'
+        );
+    }
+    /**
+     * Register the User service provider.
+     *
+     * @return void
+     */
+    public function registerUser()
+    {
+        $this->app->bind(
+            'Lasallecms\Repositories\UserRepositoryInterface',
+            'Lasallecms\Repositories\UserRepositoryEloquent'
+        );
+    }
+
 
 
     /**
