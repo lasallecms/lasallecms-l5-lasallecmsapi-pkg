@@ -41,7 +41,7 @@ class Tag extends BaseModel {
 
 
     /**
-     * Sanitation rules for Create (INSERT) db operation
+     * Sanitation rules for Create (INSERT)
      *
      * @var array
      */
@@ -51,7 +51,7 @@ class Tag extends BaseModel {
     ];
 
     /**
-     * Sanitation rules for Update db operation
+     * Sanitation rules for UPDATE
      *
      * @var array
      */
@@ -61,7 +61,7 @@ class Tag extends BaseModel {
 
 
     /**
-     * Create validation rules for admin tags
+     * Validation rules for  Create (INSERT)
      *
      * @var array
      */
@@ -71,7 +71,7 @@ class Tag extends BaseModel {
     ];
 
     /**
-     * Update validation rules for admin tags
+     * Validation rules for UPDATE
      *
      * @var array
      */

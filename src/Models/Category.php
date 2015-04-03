@@ -40,6 +40,46 @@ class Category extends BaseModel {
     protected $fillable = ['title', 'description', 'enabled'];
 
 
+    /**
+     * Sanitation rules for Create (INSERT)
+     *
+     * @var array
+     */
+    public $sanitationRulesForCreate = [
+        'title'       => 'trim|strip_tags',
+        'description' => 'trim',
+    ];
+
+    /**
+     * Sanitation rules for UPDATE
+     *
+     * @var array
+     */
+    public $sanitationRulesForUpdate = [
+        'description' => 'trim',
+    ];
+
+
+    /**
+     * Validation rules for Create (INSERT)
+     *
+     * @var array
+     */
+    public $validationRulesForCreate = [
+        'title'       => 'required|min:4|unique:tags',
+        'description' => 'required|min:4',
+    ];
+
+    /**
+     * Validation rules for UPDATE
+     *
+     * @var array
+     */
+    public $validationRulesForUpdate = [
+        'description' => 'required|min:4',
+    ];
+
+
     /*
      * Many categories per single post
      *

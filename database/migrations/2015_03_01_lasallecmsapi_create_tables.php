@@ -116,6 +116,8 @@ class CreateTables extends Migration {
 
                 $table->boolean('enabled')->default(true);
 
+                $table->timestamp('publish_on');
+
                 $table->timestamp('created_at');
                 $table->integer('created_by')->unsigned();
                 $table->foreign('created_by')->references('id')->on('users');
@@ -179,6 +181,8 @@ class CreateTables extends Migration {
                 $table->text('excerpt');
 
                 $table->boolean('enabled')->default(true);
+
+                $table->timestamp('publish_on');
 
                 $table->timestamp('created_at');
                 $table->integer('created_by')->unsigned();
