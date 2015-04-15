@@ -78,7 +78,7 @@ class UpdatePostFormProcessing extends BaseFormProcessing implements FormProcess
 
         // Sanitize
         // THIS IS A FIRST PASS AT SANITIZING, BECAUSE A LOT MORE ACTION OCCURS IN persist()
-        $data = $this->sanitize($data);
+        $data = $this->sanitize($data, "update");
 
         // Validate
         if ($this->validate($data, "update") != "passed")

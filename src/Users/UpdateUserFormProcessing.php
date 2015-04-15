@@ -77,7 +77,7 @@ class UpdateUserFormProcessing extends BaseFormProcessing implements FormProcess
         //$this->isForeignKeyOk($data);
 
         // Sanitize
-        $data = $this->sanitize($data);
+        $data = $this->sanitize($data, "update");
 
         // Validate
         if ($this->validate($data, "update") != "passed")

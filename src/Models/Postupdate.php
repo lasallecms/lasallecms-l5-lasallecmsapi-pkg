@@ -38,7 +38,51 @@ class Postupdate extends BaseModel {
      * @var array
      */
     protected $fillable = [
-        'title', 'content', 'excerpt', 'post_id', 'enabled'
+        'title', 'content', 'excerpt', 'post_id', 'enabled', 'publish_on'
+    ];
+
+
+    /**
+     * Sanitation rules for Create (INSERT)
+     *
+     * @var array
+     */
+    public $sanitationRulesForCreate = [
+        'title'       => 'trim|strip_tags',
+        'content' => 'trim',
+        'excerpt' => 'trim|strip_tags',
+    ];
+
+    /**
+     * Sanitation rules for UPDATE
+     *
+     * @var array
+     */
+    public $sanitationRulesForUpdate = [
+        'title'       => 'trim|strip_tags',
+        'content' => 'trim',
+        'excerpt' => 'trim|strip_tags',
+    ];
+
+
+    /**
+     * Validation rules for Create (INSERT)
+     *
+     * @var array
+     */
+    public $validationRulesForCreate = [
+        'title'       => 'required|min:4',
+        'content' => 'required|min:4',
+    ];
+
+    /**
+     * Validation rules for UPDATE
+     *
+     * @var array
+     */
+    public $validationRulesForUpdate = [
+        'title'       => 'required|min:4',
+        'content' => 'required|min:4',
     ];
 
 

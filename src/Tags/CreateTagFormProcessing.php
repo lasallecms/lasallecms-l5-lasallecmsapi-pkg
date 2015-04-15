@@ -76,7 +76,7 @@ class CreateTagFormProcessing extends BaseFormProcessing implements FormProcessi
         //$this->isForeignKeyOk($command);
 
         // Sanitize
-        $data = $this->sanitize($data);
+        $data = $this->sanitize($data, "create");
 
         // Validate
         if ($this->validate($data, "create") != "passed")

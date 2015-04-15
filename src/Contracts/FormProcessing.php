@@ -54,9 +54,10 @@ interface FormProcessing {
      * Sanitize and transform the data
      *
      * @param  array  $data
+     * @param  text   $type   Either "create" or "update"
      * @return array
      */
-    public function sanitize($data);
+    public function sanitize($data, $type);
 
     /*
      * Validate

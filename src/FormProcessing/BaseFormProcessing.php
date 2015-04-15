@@ -39,11 +39,14 @@ class BaseFormProcessing {
      * Sanitize and transform the data
      *
      * @param  array  $data
+     * @param  text   $type   Either "create" or "update"
      * @return array
      */
-    public function sanitize($data){
+    public function sanitize($data, $type){
 
-        $rules = $this->repository->getSanitationRulesForUpdate();
+        if (strtolower($type) == "create") $rules = $this->repository->getSanitationRulesForCreate();
+
+        if (strtolower($type) == "update") $rules = $this->repository->getSanitationRulesForUpdate();
 
         $sanitizedData = $this->repository->getSanitize($data, $rules);
 

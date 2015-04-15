@@ -40,10 +40,10 @@ use Lasallecms\Lasallecmsapi\Contracts\PostupdateRepository;
 
 
 /*
- * Process a new tag .
+ * Process a deletion.
  * Go through the standard process (interface).
  */
-class CreatePostupdateFormProcessing extends BaseFormProcessing implements FormProcessing {
+class DeletePostupdateFormProcessing extends BaseFormProcessing implements FormProcessing {
 
     /*
      * Instance of repository
@@ -64,32 +64,36 @@ class CreatePostupdateFormProcessing extends BaseFormProcessing implements FormP
     /*
      * The processing steps.
      *
-     * @param  The command bus object   $createPostupdateCommand
+     * @param  The command bus object   $deleteTagCommand
      * @return The custom response array
      */
-    public function quarterback($createPostupdateCommand) {
+    public function quarterback($deletePostupdateCommand) {
 
         // Get inputs into array
-        $data = (array) $createPostupdateCommand;
+        $data = (array) $deletePostupdateCommand;
 
-        // Foreign Key check --> not applicable
-        //$this->isForeignKeyOk($command);
+        // Foreign Key check -> not applicable
+        /*if (!$this->isForeignKeyOk($data))
+        {
+            // Prepare the response array, and then return to the index with error messages
+            return $this->prepareResponseArray('foreign_key_check_failed', 500, $data);
+        }
+        */
 
-        // Sanitize
+        // Sanitize -> not applicable
+        //$data = $this->sanitize($data);
 
-        // **** YO THERE!!!!!  ==> NEED SANITIZE AND VALIDATE RULES IN DA MODEL!!!!!!     *********
-
-        $data = $this->sanitize($data);
-
-        // Validate
-        if ($this->validate($data, "create") != "passed")
+        // Validate -> not applicable
+        /*
+        if ($this->validate($data, "type") != "passed")
         {
             // Prepare the response array, and then return to the edit form with error messages
-            return $this->prepareResponseArray('validation_failed', 500, $data, $this->validate($data, "create"));
+            return $this->prepareResponseArray('validation_failed', 500, $data, $this->validate($data, "type"));
         }
+        */
 
 
-        // Create
+        // Delete!
         if (!$this->persist($data))
         {
             // Prepare the response array, and then return to the edit form with error messages
@@ -114,7 +118,7 @@ class CreatePostupdateFormProcessing extends BaseFormProcessing implements FormP
      * @param  array  $data
      * @return bool
      */
-    public function isForeignKeyOk($data){}
+    public function isForeignKeyOk($data){ }
 
 
     /*
@@ -124,7 +128,7 @@ class CreatePostupdateFormProcessing extends BaseFormProcessing implements FormP
      * @return bool
      */
     public function persist($data){
-        return $this->repository->createPostupdate($data);
+        return $this->repository->getDestroy($data['id']->id);
     }
 
 

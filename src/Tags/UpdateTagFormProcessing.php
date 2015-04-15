@@ -77,7 +77,7 @@ class UpdateTagFormProcessing extends BaseFormProcessing implements FormProcessi
         //$this->isForeignKeyOk($command);
 
         // Sanitize
-        $data = $this->sanitize($data);
+        $data = $this->sanitize($data, "update");
 
         // Validate
         if ($this->validate($data, "update") != "passed")

@@ -77,7 +77,7 @@ class UpdateCategoryFormProcessing extends BaseFormProcessing implements FormPro
         //$this->isForeignKeyOk($updateCategoryCommand);
 
         // Sanitize
-        $data = $this->sanitize($data);
+        $data = $this->sanitize($data, "update");
 
         // Validate
         if ($this->validate($data, "update") != "passed")

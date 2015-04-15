@@ -53,7 +53,7 @@ class Post extends BaseModel {
      * @var array
      */
     protected $fillable = [
-        'title', 'slug', 'content', 'excerpt', 'meta_description', 'enabled', 'featured_image'
+        'title', 'slug', 'content', 'excerpt', 'meta_description', 'enabled', 'featured_image', 'publish_on'
     ];
 
     /**

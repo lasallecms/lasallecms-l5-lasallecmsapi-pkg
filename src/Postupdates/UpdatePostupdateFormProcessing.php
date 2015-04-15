@@ -1,4 +1,4 @@
-<?php namespace Lasallecms\Lasallecmsapi\Tags;
+<?php namespace Lasallecms\Lasallecmsapi\Postupdates;
 
 /**
  *
@@ -35,15 +35,16 @@ use Lasallecms\Lasallecmsapi\Contracts\FormProcessing;
 // Form Processing Base Concrete Class
 use Lasallecms\Lasallecmsapi\FormProcessing\BaseFormProcessing;
 
-// Post Update Repository Interface
+// Tag Repository Interface
 use Lasallecms\Lasallecmsapi\Contracts\PostupdateRepository;
 
 
 /*
- * Process a deletion.
+ * Process an update.
  * Go through the standard process (interface).
  */
-class DeletePostupdateFormProcessing extends BaseFormProcessing implements FormProcessing {
+class UpdatePostupdateFormProcessing extends BaseFormProcessing implements FormProcessing {
+
 
     /*
      * Instance of repository
@@ -64,38 +65,41 @@ class DeletePostupdateFormProcessing extends BaseFormProcessing implements FormP
     /*
      * The processing steps.
      *
-     * @param  The command bus object   $deleteTagCommand
+     * @param  The command bus object   $updateTagCommand
      * @return The custom response array
      */
-    public function quarterback($deletePostupdateCommand) {
+    public function quarterback($updateTagCommand) {
 
         // Get inputs into array
-        $data = (array) $deletePostupdateCommand;
+        $data = (array) $updateTagCommand;
 
-        // Foreign Key check -> not applicable
-        /*if (!$this->isForeignKeyOk($data))
+        // Foreign Key check --> not applicable
+        //$this->isForeignKeyOk($command);
+
+        // Sanitize
+
+        // **** YO THERE!!!!!  ==> NEED SANITIZE AND VALIDATE RULES IN DA MODEL!!!!!!     *********
+
+
+        $data = $this->sanitize($data, "update");
+
+        // Validate
+        if ($this->validate($data, "update") != "passed")
         {
-            // Prepare the response array, and then return to the index with error messages
-            return $this->prepareResponseArray('foreign_key_check_failed', 500, $data);
-        }
-        */
+            // Unlock the record
+            $this->unlock($data['id']);
 
-        // Sanitize -> not applicable
-        //$data = $this->sanitize($data);
-
-        // Validate -> not applicable
-        /*
-        if ($this->validate($data, "type") != "passed")
-        {
             // Prepare the response array, and then return to the edit form with error messages
-            return $this->prepareResponseArray('validation_failed', 500, $data, $this->validate($data, "type"));
+            return $this->prepareResponseArray('validation_failed', 500, $data, $this->validate($data, "update"));
         }
-        */
 
 
-        // Delete!
+        // Update
         if (!$this->persist($data))
         {
+            // Unlock the record
+            $this->unlock($data['id']);
+
             // Prepare the response array, and then return to the edit form with error messages
             // Laravel's https://github.com/laravel/framework/blob/5.0/src/Illuminate/Database/Eloquent/Model.php
             //  does not prepare a MessageBag object, so we'll whip up an error message in the
@@ -103,11 +107,11 @@ class DeletePostupdateFormProcessing extends BaseFormProcessing implements FormP
             return $this->prepareResponseArray('persist_failed', 500, $data);
         }
 
-        // Unlock the record --> not applicable
-        //$this->unlock($data['id']);
+        // Unlock the record
+        $this->unlock($data['id']);
 
         // Prepare the response array, and then return to the command
-        return $this->prepareResponseArray('create_successful', 200, $data);
+        return $this->prepareResponseArray('update_successful', 200, $data);
 
     }
 
@@ -118,17 +122,20 @@ class DeletePostupdateFormProcessing extends BaseFormProcessing implements FormP
      * @param  array  $data
      * @return bool
      */
-    public function isForeignKeyOk($data){ }
-
+    public function isForeignKeyOk($data){}
 
     /*
-     * Persist --> save/create to the database
+     * Persist --> save/update to the database
      *
      * @param  array  $data
      * @return bool
      */
     public function persist($data){
-        return $this->repository->getDestroy($data['id']->id);
+
+        // Extra step: prepare data for persist
+        $data = $this->repository->preparePostupdateForPersist($data);
+
+        return $this->repository->updatePostupdate($data);
     }
 
 

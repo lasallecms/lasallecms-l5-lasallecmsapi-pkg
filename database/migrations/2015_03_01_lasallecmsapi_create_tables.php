@@ -175,7 +175,7 @@ class CreateTables extends Migration {
                 $table->increments('id')->unsigned();
 
                 $table->integer('post_id')->unsigned();
-                $table->foreign('post_id')->references('id')->on('posts');
+                $table->foreign('post_id')->references('id')->on('posts')->onDelete('cascade');
 
                 $table->string('title')->unique();
                 $table->text('content');
@@ -183,7 +183,7 @@ class CreateTables extends Migration {
 
                 $table->boolean('enabled')->default(true);
 
-                $table->timestamp('publish_on');
+                $table->date('publish_on');
 
                 $table->timestamp('created_at');
                 $table->integer('created_by')->unsigned();

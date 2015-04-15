@@ -77,7 +77,7 @@ class CreatePostFormProcessing extends BaseFormProcessing implements FormProcess
 
         // Sanitize
         // THIS IS A FIRST PASS AT SANITIZING, BECAUSE A LOT MORE ACTION OCCURS IN persist()
-        $data = $this->sanitize($data);
+        $data = $this->sanitize($data, "create");
 
 
 
@@ -126,7 +126,7 @@ class CreatePostFormProcessing extends BaseFormProcessing implements FormProcess
     public function persist($data){
 
         // Extra step: prepare data for persist
-        $data = $this->repository->preparePostForPersist($data);
+        $data = $this->repository->preparePosttForPersist($data);
 
         return $this->repository->createPost($data);
     }

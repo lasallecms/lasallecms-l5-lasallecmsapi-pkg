@@ -34,12 +34,13 @@ use Lasallecms\Lasallecmsapi\Contracts\PostupdateRepository;
 use Lasallecms\Lasallecmsapi\Models\Postupdate;
 
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 
 /*
  * Eloquent implementation of the Post Update repository
  */
-class PostupdateEloquent extends BaseEloquent implements TagRepository {
+class PostupdateEloquent extends BaseEloquent implements PostupdateRepository {
 
 
     /*
@@ -91,6 +92,31 @@ class PostupdateEloquent extends BaseEloquent implements TagRepository {
             ->get();
     }
 
+
+    ///////////////////////////////////////////////////////////////////
+    ///////////////////////////    PERSIST    /////////////////////////
+    ///////////////////////////////////////////////////////////////////
+
+    /*
+     * Prepare input data for save
+     *
+     * Basically ignoring the sanitizing that has already been applied, in the interests
+     * of being thorough
+     *
+     * @param  array   $data  The sanitized input data array
+     * @return array
+     */
+    public function preparePostupdateForPersist($data)
+    {
+        $data['title']            = $this->prepareTitleForPersist($data['title']);
+        $data['content']          = $this->prepareContentForPersist($data['content']);
+        $data['excerpt']          = $this->prepareExcerptForPersist($data['excerpt'], $data['content']);
+        $data['enabled']          = $this->prepareEnabledForPersist($data['enabled']);
+        $data['publish_on']       = $this->preparePublishOnForPersist($data['publish_on']);
+
+        return $data;
+    }
+
     /*
      * Create (INSERT)
      *
@@ -99,19 +125,28 @@ class PostupdateEloquent extends BaseEloquent implements TagRepository {
      */
     public function createPostupdate($data)
     {
+        $postupdate = new Postupdate();
 
-        // WHOA --> pretty involved process at
-        // https://github.com/bbloom/lasallecms/blob/master/src/Lasallecms/repositories/PostupdateRepositoryEloquent.php
+        $postupdate->post_id          = $data['post_id'];
+        $postupdate->title            = $data['title'];
+        $postupdate->content          = $data['content'];
+        $postupdate->excerpt          = $data['excerpt'];
+        $postupdate->enabled          = $data['enabled'];
+        $postupdate->publish_on       = $data['publish_on'];
 
-        $tag = new Tag();
 
-        $tag->title       = $data['title'];
-        $tag->description = $data['description'];
-        $tag->created_by  = Auth::user()->id;
-        $tag->updated_by  = Auth::user()->id;
+        $postupdate->created_at       = $data['created_at'] = Carbon::now();
+        $postupdate->created_by       = $data['created_by'] = Auth::user()->id;
 
-        return $tag->save();
+        $postupdate->updated_at       = $data['updated_at'] = Carbon::now();
+        $postupdate->updated_by       = $data['updated_by'] = Auth::user()->id;
+
+        $saveWentOk = $postupdate->save();
+
+        if ($saveWentOk) return true;
+        return false;
     }
+
 
     /*
      * UPDATE
@@ -121,9 +156,22 @@ class PostupdateEloquent extends BaseEloquent implements TagRepository {
      */
     public function updatePostupdate($data)
     {
-        $tag = $this->getFind($data['id']);
-        $tag->description = $data['description'];
-        return $tag->save();
+        $postupdate = $this->getFind($data['id']);
+
+        $postupdate->post_id          = $data['post_id'];
+        $postupdate->title            = $data['title'];
+        $postupdate->content          = $data['content'];
+        $postupdate->excerpt          = $data['excerpt'];
+        $postupdate->enabled          = $data['enabled'];
+        $postupdate->publish_on       = $data['publish_on'];
+
+        $postupdate->updated_at       = $data['updated_at'] = Carbon::now();
+        $postupdate->updated_by       = $data['updated_by'] = Auth::user()->id;
+
+        $saveWentOk = $postupdate->save();
+
+        if ($saveWentOk) return true;
+        return false;
     }
 
 

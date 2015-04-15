@@ -76,7 +76,7 @@ class CreateUserFormProcessing extends BaseFormProcessing implements FormProcess
         //$this->isForeignKeyOk($data);
 
         // Sanitize
-        $data = $this->sanitize($data);
+        $data = $this->sanitize($data, "create");
 
         // Validate
         if ($this->validate($data, "create") != "passed")
