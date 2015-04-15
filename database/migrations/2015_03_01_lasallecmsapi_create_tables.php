@@ -112,11 +112,12 @@ class CreateTables extends Migration {
                 $table->text('content');
                 $table->text('excerpt');
                 $table->string('meta_description');
+                $table->text('canonical_url');
                 $table->string('featured_image');
 
                 $table->boolean('enabled')->default(true);
 
-                $table->timestamp('publish_on');
+                $table->date('publish_on');
 
                 $table->timestamp('created_at');
                 $table->integer('created_by')->unsigned();
@@ -142,7 +143,7 @@ class CreateTables extends Migration {
                 $table->increments('id')->unsigned();
 
                 $table->integer('post_id')->unsigned()->index();
-                $table->foreign('post_id')->references('id')->on('categories')->onDelete('cascade');
+                $table->foreign('post_id')->references('id')->on('posts')->onDelete('cascade');
                 $table->integer('category_id')->unsigned()->index();
                 $table->foreign('category_id')->references('id')->on('categories')->onDelete('cascade');
             });

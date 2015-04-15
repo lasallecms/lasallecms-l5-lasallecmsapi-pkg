@@ -62,9 +62,10 @@ interface FormProcessing {
      * Validate
      *
      * @param  array  $data
+     * @param  text   $type   Are we validating a create or update?
      * @return bool
      */
-    public function validate($data);
+    public function validate($data, $type);
 
     /*
      * Persist --> save/update to the database

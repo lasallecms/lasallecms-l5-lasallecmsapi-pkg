@@ -1,4 +1,4 @@
-<?php
+<?php namespace Lasallecms\Lasallecmsapi\Contracts;
 
 /**
  *
@@ -30,32 +30,10 @@
  */
 
 
-
-return [
-
-	/*
-	|--------------------------------------------------------------------------
-	| Excerpt Length
-	|--------------------------------------------------------------------------
-	|
-	| When an excerpt field is left blank, then the "content" field is used to
-	| construct the excerpt. How many characters of the base "content" field
-	| do you want to use for the excerpt?
-	|
-	*/
-	'how_many_initial_chars_of_content_field_for_excerpt' => '100',
-
-    /*
-	|--------------------------------------------------------------------------
-	| Excerpt Ellipses
-	|--------------------------------------------------------------------------
-	|
-	| Do you prefer adding ellipses to your excerpts? Use this config setting
-    | to do so automatically, instead of remembering to add the ellipses manually
-    | each time you add a post
-	|
-	*/
-    //'excerpt_ellipses' => '',
-    'append_excerpt_with_this_string' => '...',
-
-];
+/**
+ *
+ * Note that we extend from BaseRepository, so any class that implements
+ * this interface must also provide all the standard eloquent methods (find, all, etc.)
+ *
+ */
+interface UserRepository extends BaseRepository { }

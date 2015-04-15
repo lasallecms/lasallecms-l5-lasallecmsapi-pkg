@@ -33,7 +33,7 @@ use Lasallecms\Lasallecmsapi\Contracts\TagRepository;
 
 use Lasallecms\Lasallecmsapi\Models\Tag;
 
-use Auth;
+use Illuminate\Support\Facades\Auth;
 
 
 /*

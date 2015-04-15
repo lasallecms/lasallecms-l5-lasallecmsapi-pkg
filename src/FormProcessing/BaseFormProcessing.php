@@ -54,10 +54,14 @@ class BaseFormProcessing {
      * Validate
      *
      * @param  array  $data
+     * @param  text   $type   Are we validating a create or update?
      * @return bool
      */
-    public function validate($data){
-        $rules = $this->repository->getValidationRulesForUpdate();
+    public function validate($data, $type){
+
+        if (strtolower($type) == "create") $rules = $this->repository->getValidationRulesForCreate();
+
+        if (strtolower($type) == "update") $rules = $this->repository->getValidationRulesForUpdate();
 
         $validator = Validator::make($data,$rules);
 

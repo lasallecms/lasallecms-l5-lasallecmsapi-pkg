@@ -1,4 +1,4 @@
-<?php namespace Lasallecms\Lasallecmsapi\Postupdates;
+<?php namespace Lasallecms\Lasallecmsapi\Users;
 
 /**
  *
@@ -36,51 +36,47 @@ use Lasallecms\Lasallecmsapi\Contracts\FormProcessing;
 use Lasallecms\Lasallecmsapi\FormProcessing\BaseFormProcessing;
 
 // Tag Repository Interface
-use Lasallecms\Lasallecmsapi\Contracts\PostupdateRepository;
+use Lasallecms\Lasallecmsapi\Contracts\UserRepository;
 
 
 /*
  * Process an update.
  * Go through the standard process (interface).
  */
-class UpdatePostupdateFormProcessing extends BaseFormProcessing implements FormProcessing {
+class UpdateUserFormProcessing extends BaseFormProcessing implements FormProcessing {
 
 
     /*
      * Instance of repository
      *
-     * @var Lasallecms\Lasallecmsapi\Contracts\PostupdateRepository
+     * @var Lasallecms\Lasallecmsapi\Contracts\UserRepository
      */
     protected $repository;
 
     /*
      * Inject the model
      *
-     * @param  Lasallecms\Lasallecmsapi\Contracts\PostupdateRepository
+     * @param  Lasallecms\Lasallecmsapi\Contracts\UserRepository
      */
-    public function __construct(PostupdateRepository $repository) {
+    public function __construct(UserRepository $repository) {
         $this->repository = $repository;
     }
 
     /*
      * The processing steps.
      *
-     * @param  The command bus object   $updateTagCommand
+     * @param  The command bus object   $updateUserCommand
      * @return The custom response array
      */
-    public function quarterback($updateTagCommand) {
+    public function quarterback($updateUserCommand) {
 
         // Get inputs into array
-        $data = (array) $updateTagCommand;
+        $data = (array) $updateUserCommand;
 
         // Foreign Key check --> not applicable
-        //$this->isForeignKeyOk($command);
+        //$this->isForeignKeyOk($data);
 
         // Sanitize
-
-        // **** YO THERE!!!!!  ==> NEED SANITIZE AND VALIDATE RULES IN DA MODEL!!!!!!     *********
-
-
         $data = $this->sanitize($data);
 
         // Validate
@@ -131,7 +127,7 @@ class UpdatePostupdateFormProcessing extends BaseFormProcessing implements FormP
      * @return bool
      */
     public function persist($data){
-        return $this->repository->updatePostupdate($data);
+        return $this->repository->updateUser($data);
     }
 
 

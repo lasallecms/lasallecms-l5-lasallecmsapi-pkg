@@ -33,7 +33,7 @@ use Lasallecms\Lasallecmsapi\Models\BaseModel;
 
 class Post_category extends BaseModel
 {
-    protected $table = 'post_category';
+    public $table = 'post_category';
 
     /**
      * Timestamps for the post_tag table

@@ -87,7 +87,7 @@ class Tag extends BaseModel {
      */
     public function posts()
     {
-        return $this->belongsToMany('Lasallecms\Lasallecmsapi\Models\Post');
+        return $this->belongsToMany('Lasallecms\Lasallecmsapi\Models\Post', 'post_tag');
     }
 
 

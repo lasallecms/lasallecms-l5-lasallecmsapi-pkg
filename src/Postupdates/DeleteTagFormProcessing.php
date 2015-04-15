@@ -85,10 +85,10 @@ class DeletePostupdateFormProcessing extends BaseFormProcessing implements FormP
 
         // Validate -> not applicable
         /*
-        if ($this->validate($data) != "passed")
+        if ($this->validate($data, "type") != "passed")
         {
             // Prepare the response array, and then return to the edit form with error messages
-            return $this->prepareResponseArray('validation_failed', 500, $data, $this->validate($data));
+            return $this->prepareResponseArray('validation_failed', 500, $data, $this->validate($data, "type"));
         }
         */
 

@@ -1,4 +1,4 @@
-<?php namespace Lasallecms\Lasallecmsapi\Postupdates;
+<?php namespace Lasallecms\Lasallecmsapi\Users;
 
 /**
  *
@@ -36,70 +36,59 @@ use Lasallecms\Lasallecmsapi\Contracts\FormProcessing;
 use Lasallecms\Lasallecmsapi\FormProcessing\BaseFormProcessing;
 
 // Tag Repository Interface
-use Lasallecms\Lasallecmsapi\Contracts\PostupdateRepository;
+use Lasallecms\Lasallecmsapi\Contracts\UserRepository;
 
 
 /*
- * Process an update.
+ * Process a new tag .
  * Go through the standard process (interface).
  */
-class UpdatePostupdateFormProcessing extends BaseFormProcessing implements FormProcessing {
-
+class CreateUserFormProcessing extends BaseFormProcessing implements FormProcessing {
 
     /*
      * Instance of repository
      *
-     * @var Lasallecms\Lasallecmsapi\Contracts\PostupdateRepository
+     * @var Lasallecms\Lasallecmsapi\Contracts\UserRepository
      */
     protected $repository;
 
     /*
      * Inject the model
      *
-     * @param  Lasallecms\Lasallecmsapi\Contracts\PostupdateRepository
+     * @param  Lasallecms\Lasallecmsapi\Contracts\UserRepository
      */
-    public function __construct(PostupdateRepository $repository) {
+    public function __construct(UserRepository $repository) {
         $this->repository = $repository;
     }
 
     /*
      * The processing steps.
      *
-     * @param  The command bus object   $updateTagCommand
+     * @param  The command bus object   $createUserCommand
      * @return The custom response array
      */
-    public function quarterback($updateTagCommand) {
+    public function quarterback($createUserCommand) {
 
         // Get inputs into array
-        $data = (array) $updateTagCommand;
+        $data = (array) $createUserCommand;
 
         // Foreign Key check --> not applicable
-        //$this->isForeignKeyOk($command);
+        //$this->isForeignKeyOk($data);
 
         // Sanitize
-
-        // **** YO THERE!!!!!  ==> NEED SANITIZE AND VALIDATE RULES IN DA MODEL!!!!!!     *********
-
-
         $data = $this->sanitize($data);
 
         // Validate
-        if ($this->validate($data, "update") != "passed")
+        if ($this->validate($data, "create") != "passed")
         {
-            // Unlock the record
-            $this->unlock($data['id']);
-
             // Prepare the response array, and then return to the edit form with error messages
-            return $this->prepareResponseArray('validation_failed', 500, $data, $this->validate($data, "update"));
+            return $this->prepareResponseArray('validation_failed', 500, $data, $this->validate($data, "create"));
         }
 
 
-        // Update
+        // Create
         if (!$this->persist($data))
         {
-            // Unlock the record
-            $this->unlock($data['id']);
-
             // Prepare the response array, and then return to the edit form with error messages
             // Laravel's https://github.com/laravel/framework/blob/5.0/src/Illuminate/Database/Eloquent/Model.php
             //  does not prepare a MessageBag object, so we'll whip up an error message in the
@@ -107,11 +96,11 @@ class UpdatePostupdateFormProcessing extends BaseFormProcessing implements FormP
             return $this->prepareResponseArray('persist_failed', 500, $data);
         }
 
-        // Unlock the record
-        $this->unlock($data['id']);
+        // Unlock the record --> not applicable
+        //$this->unlock($data['id']);
 
         // Prepare the response array, and then return to the command
-        return $this->prepareResponseArray('update_successful', 200, $data);
+        return $this->prepareResponseArray('create_successful', 200, $data);
 
     }
 
@@ -124,15 +113,17 @@ class UpdatePostupdateFormProcessing extends BaseFormProcessing implements FormP
      */
     public function isForeignKeyOk($data){}
 
+
     /*
-     * Persist --> save/update to the database
+     * Persist --> save/create to the database
      *
      * @param  array  $data
      * @return bool
      */
     public function persist($data){
-        return $this->repository->updatePostupdate($data);
+        return $this->repository->createUser($data);
     }
+
 
 
 }

@@ -118,10 +118,10 @@ class LasallecmsapiServiceProvider extends ServiceProvider {
 
         // Bind repository interfaces with their implementations
         $this->registerCategory();
-        //$this->registerPost();
+        $this->registerPost();
         $this->registerPostupdate();
         $this->registerTag();
-        //$this->registerUser();
+        $this->registerUser();
     }
 
 
@@ -158,8 +158,8 @@ class LasallecmsapiServiceProvider extends ServiceProvider {
     public function registerPost()
     {
         $this->app->bind(
-            'Lasallecms\Repositories\PostRepositoryInterface',
-            'Lasallecms\Repositories\PostRepositoryEloquent'
+            'Lasallecms\Lasallecmsapi\Contracts\PostRepository',
+            'Lasallecms\Lasallecmsapi\Repositories\PostEloquent'
         );
     }
     /**
@@ -194,8 +194,8 @@ class LasallecmsapiServiceProvider extends ServiceProvider {
     public function registerUser()
     {
         $this->app->bind(
-            'Lasallecms\Repositories\UserRepositoryInterface',
-            'Lasallecms\Repositories\UserRepositoryEloquent'
+            'Lasallecms\Lasallecmsapi\Contracts\UserRepository',
+            'Lasallecms\Lasallecmsapi\Repositories\UserEloquent'
         );
     }
 

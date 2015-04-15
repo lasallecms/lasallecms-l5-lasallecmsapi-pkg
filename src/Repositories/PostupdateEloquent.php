@@ -33,7 +33,7 @@ use Lasallecms\Lasallecmsapi\Contracts\PostupdateRepository;
 
 use Lasallecms\Lasallecmsapi\Models\Postupdate;
 
-use Auth;
+use Illuminate\Support\Facades\Auth;
 
 
 /*

@@ -33,6 +33,7 @@ use Lasallecms\Lasallecmsapi\Models\BaseModel;
 
 class Category extends BaseModel {
 
+
     /**
      * Which fields may be mass assigned
      * @var array
@@ -87,7 +88,7 @@ class Category extends BaseModel {
      */
     public function post()
     {
-        return $this->belongsToMany('Lasallecms\Lasallecmsapi\Models\Post');
+        return $this->belongsToMany('Lasallecms\Lasallecmsapi\Models\Post', 'post_category');
     }
 
 

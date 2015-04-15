@@ -33,7 +33,7 @@ use Lasallecms\Lasallecmsapi\Contracts\CategoryRepository;
 
 use Lasallecms\Lasallecmsapi\Models\Category;
 
-use Auth;
+use Illuminate\Support\Facades\Auth;
 
 
 /*
@@ -84,6 +84,8 @@ class CategoryEloquent extends BaseEloquent implements CategoryRepository {
             ->toArray();
         return $category[0]['id'];
     }
+
+
     /*
      * Find all the post records associated with a category
      *
@@ -108,6 +110,7 @@ class CategoryEloquent extends BaseEloquent implements CategoryRepository {
 
         $category->title       = $data['title'];
         $category->description = $data['description'];
+        $category->parent_id   = $data['parent_id'];
         $category->created_by  = Auth::user()->id;
         $category->updated_by  = Auth::user()->id;
 
@@ -124,6 +127,7 @@ class CategoryEloquent extends BaseEloquent implements CategoryRepository {
     {
         $category = $this->getFind($data['id']);
         $category->description = $data['description'];
+        $category->parent_id   = $data['parent_id'];
         return $category->save();
     }
 

@@ -31,10 +31,11 @@
 
 use Lasallecms\Lasallecmsapi\Contracts\BaseRepository;
 
-Use Auth;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\URL;
 
 class BaseEloquent implements BaseRepository {
 
@@ -130,184 +131,6 @@ class BaseEloquent implements BaseRepository {
     {
         //return $this->model->lists($name, $id)->orderBy('title', 'ASC');
         return $this->model->lists($name, $id);
-    }
-
-
-
-
-    /*
-     * Assign the slug method of the post object from the admin post form's input
-     *
-     * @param   object   $post   Post object
-     * @param   array    $data   Sanitized input from admin post form
-     * @return  object
-     */
-    public function assignSlug($post, $data)
-    {
-        // THIS IS NOT A THOROUGH METHOD FOR PRODUCING A SLUG
-        // Assumption: user is not going to mess around with slugs
-        // Assumption: new post, user leaves slug blank. Titles never the same!
-
-        // https://github.com/cviebrock/eloquent-sluggable
-        // https://github.com/martinbean/laravel-sluggable-trait
-
-        // If excerpt is empty, then use the content to populate the excerpt field
-        if ($data['slug'] == "")
-        {
-            // create the slug from Laravel's Str::slug() method
-            $post->slug = Str::slug($data['title']);
-
-        } else {
-            $rowCount = DB::table('posts')
-                ->where('slug', $data['slug'])
-                ->count();
-
-            // yup, we assume that the slug in the POSTS table is from the current post!
-            if ($rowCount == 1)
-            {
-                $post->slug = $data['slug'];
-            } else {
-                // append a number and hope the new slug is not being used in the POSTS table
-                ++$rowCount;
-                $post->slug = $data['slug'].$rowCount;
-            }
-
-        }
-
-
-
-
-        return $post;
-    }
-
-
-
-    /*
-     * Assign the publish method of the post object from the admin post form's input
-     *
-     * @param   object   $post   Post object
-     * @param   array    $data   Sanitized input from admin post form
-     * @return  object
-     */
-    public function assignExcerpt($post, $data)
-    {
-        // If excerpt is empty, then use the content to populate the excerpt field
-        if ($data['excerpt'] == "")
-        {
-            // grab the content field from the form's input
-            $content = $post->content;
-
-        } else {
-            // grab the exerpt field from the form's input
-            $content = $post->excerpt;
-        }
-
-        // remove the html tags
-        $content = strip_tags($content);
-
-        // remove leading and trailing blanks
-        $content = trim($content);
-
-        // remove any "&nbsp;" that I am known to sneak into my posts
-        $content = str_replace("&nbsp;", "", $content);
-
-        // use the first 100 chars for the excerpt
-        $post->excerpt = substr($content, 0, 100);
-
-        return $post;
-    }
-
-
-    /*
-    * Assign the publish method of the post object from the admin post form's input
-    *
-    * The db field type = tinyint(1) and the formfield is checkmark
-    *
-    * @param   $post   Post object
-    * @param   $data   Sanitized input from admin post form
-    * @return object
-    */
-    public function assignPublish($post, $data)
-    {
-        // http://stackoverflow.com/questions/20168769/laravel-4-how-to-test-if-a-checkbox-is-checked
-        if ($data['publish'] === 'yes')
-        {
-            // checked
-            $post->publish = 1;
-        } else {
-            // unchecked
-            $post->publish = 0;
-        }
-
-        return $post;
-    }
-
-
-    /*
-     * Assign the created_at and updated_at methods of the post object from the admin post form's input
-     *
-     * @param   $post   Post object
-     * @param   $data   Sanitized input from admin post form
-     * @return object
-     */
-    public function assignTimestampsForCreate($post)
-    {
-        // If the created_at date is not today, then gotta make updated_at = created_at
-        // Probably should put this in a sanitizer
-        // http://forumsarchive.laravel.io/viewtopic.php?id=14462
-        // if created_at is blank
-        if
-        (
-            ($post->created_at == "0000-00-00 00:00:00")
-            || ($post->created_at == "")
-            || ($post->created_at == "-0001-11-30 00:00:00")
-        )
-        {
-            // "use Carbon\Carbon"
-            $post->created_at = Carbon::now();
-        }
-        // updated_at is populated by now() by default but really want it to be same as created_at
-        $post->updated_at = $post->created_at;
-
-        return $post;
-    }
-
-
-
-    /*
-     * Assign the created_at and updated_at methods of the post object from the admin post form's input
-     *
-     * @param   $post   Post object
-     * @param   $data   Sanitized input from admin post form
-     * @return object
-     */
-    public function assignTimestampsForUpdate($post, $data)
-    {
-        // created_at field is untouched, so no processing here!
-        // There's a hidden field in the form to send created_at through the command bus mill
-
-
-        switch ($data['updated_at'])
-        {
-            case "0000-00-00 00:00:00":
-                $post->updated_at = Carbon::now();
-                break;
-
-            case "":
-                $post->updated_at = Carbon::now();
-                break;
-
-            case "-0001-11-30 00:00:00":
-                $post->updated_at = Carbon::now();
-                break;
-
-            default:
-                // user manually set an updated_at date in the form
-                $post->updated_at = $data['updated_at'];
-                break;
-        }
-
-        return $post;
     }
 
 
@@ -483,6 +306,240 @@ class BaseEloquent implements BaseRepository {
     {
         return $this->model->validationRulesForUpdate;
     }
+
+
+
+
+    ///////////////////////////////////////////////////////////////////
+    ////////////////    PREPARE FOR PERSIST     ///////////////////////
+    ///////////////////////////////////////////////////////////////////
+
+    /*
+     * Transform title for persist.
+     *
+     * @param  text  $title
+     * @return text
+     */
+    public function prepareTitleForPersist($title)
+    {
+        // Strip whitespace (or other characters) from the beginning and end of a string
+        $transformedTitle = trim($title);
+
+        // Strip HTML and PHP tags from a string
+        $transformedTitle = strip_tags($transformedTitle);
+
+        // Strip tags, optionally strip or encode special characters
+        // http://php.net/manual/en/filter.filters.sanitize.php
+        $transformedTitle = filter_var($transformedTitle, FILTER_SANITIZE_STRING);
+
+        // Uppercase the first character of each word in a string
+        $transformedTitle = ucwords($transformedTitle);
+
+        return $transformedTitle;
+    }
+
+    /*
+     * Prepare slug for persist.
+     *
+     * @param  text  $title
+     * @param  text  $slug
+     * @return text
+     */
+    public function prepareSlugForPersist($title, $slug)
+    {
+        $separator = '-';
+
+        if ($slug == "")
+        {
+            // Convert all dashes/underscores into separator
+            $flip = $separator == '-' ? '_' : '-';
+
+            $slug = preg_replace('!['.preg_quote($flip).']+!u', $separator, $title);
+
+            // Remove all characters that are not the separator, letters, numbers, or whitespace.
+            $slug = preg_replace('![^'.preg_quote($separator).'\pL\pN\s]+!u', '', mb_strtolower($slug));
+
+            // Replace all separator characters and whitespace by a single separator
+            $slug = preg_replace('!['.preg_quote($separator).'\s]+!u', $separator, $slug);
+
+            $rowCount = $this->doesSlugAlreadyExist($slug);
+            if ($rowCount > 0)
+            {
+                ++$rowCount;
+                return $slug.$rowCount;
+            }
+            return $slug;
+        }
+
+        // remove the encoded blank chars
+        $slug = str_replace("\xc2\xa0",'',$slug);
+
+        $slug = trim($slug);
+        $slug = strtolower($slug);
+        $slug = strip_tags($slug);
+        $slug = preg_replace('!['.preg_quote($separator).'\s]+!u', $separator, $slug);
+
+        $rowCount = $this->doesSlugAlreadyExist($slug);
+
+        if ($rowCount > 0)
+        {
+            ++$rowCount;
+            return $slug.$rowCount;
+        }
+        return $slug;
+    }
+
+    /*
+     * Does the slug already exist in the table?
+     *
+     * @param  text  $slug
+     * @return int
+     */
+    public function doesSlugAlreadyExist($slug)
+    {
+        $rowCount = DB::table($this->model->table)
+            ->where('slug',  $slug)
+            ->count();
+
+        if ($rowCount > 0) return $rowCount;
+        return 0;
+    }
+
+
+
+
+    /*
+     * Transform canonical_url for persist.
+     *
+     * @param  text  $slug
+     * @return text
+     */
+    public function prepareCanonicalURLForPersist($slug)
+    {
+        $baseURL = rtrim(config('app.url'), "/");
+
+        if ($this->model->table == "posts") $type = "blog";
+
+        return $baseURL.'/'.$type.'/'.$slug;
+    }
+
+    /*
+     * Transform content for persist.
+     *
+     * @param  text  $content
+     * @return text
+     */
+    public function prepareContentForPersist($content)
+    {
+        $transformedContent = trim($content);
+        return $transformedContent;
+    }
+
+    /*
+     * Transform excerpt for persist.
+     *
+     * @param  text  $excerpt
+     * @return text
+     */
+    public function prepareExcerptForPersist($excerpt="", $content)
+    {
+        $chars_to_excerpt = config('lasallecmsapi.how_many_initial_chars_of_content_field_for_excerpt');
+
+        if ($excerpt == "")
+        {
+            $excerpt = $content;
+
+            $excerpt = html_entity_decode($excerpt);
+            $excerpt = strip_tags($excerpt);
+            $excerpt = filter_var($excerpt, FILTER_SANITIZE_STRING);
+
+            // remove the encoded blank chars
+            $excerpt = str_replace("\xc2\xa0",'',$excerpt);
+
+            $excerpt = trim($excerpt);
+            $excerpt = mb_substr($excerpt, 0, $chars_to_excerpt).config('lasallecmsapi.append_excerpt_with_this_string');
+            return $excerpt;
+        }
+
+        $excerpt = html_entity_decode($excerpt);
+        $excerpt = strip_tags($excerpt);
+        $excerpt = filter_var($excerpt, FILTER_SANITIZE_STRING);
+
+        // remove the encoded blank chars
+        $excerpt = str_replace("\xc2\xa0",'',$excerpt);
+
+        $excerpt = trim($excerpt);
+        $excerpt.config('lasallecmsapi.append_excerpt_with_this_string');
+
+        return $excerpt;
+    }
+
+    /*
+     * Transform meta_description for persist.
+     *
+     * @param  text  $meta_description
+     * @param  text  $excerpt
+     * @return text
+     */
+    public function prepareMetaDescriptionForPersist($meta_description="", $excerpt)
+    {
+        if ($meta_description == "") return $excerpt;
+
+        $meta_description = html_entity_decode($meta_description);
+        $meta_description = strip_tags($meta_description);
+        $meta_description = filter_var($meta_description, FILTER_SANITIZE_STRING);
+
+        // remove the encoded blank chars
+        $excerpt = str_replace("\xc2\xa0",'',$excerpt);
+
+        $excerpt = trim($excerpt);
+        return $meta_description;
+    }
+
+    /*
+     * Transform featured_image for persist.
+     *
+     * @param  text  $featured_image
+     * @return text
+     */
+    public function prepareFeaturedImageForPersist($featured_image)
+    {
+        return $featured_image;
+    }
+
+    /*
+     * Transform enabled for persist.
+     *
+     * @param  bool  $enabled
+     * @return bool
+     */
+    public function prepareEnabledForPersist($enabled) {
+        if (($enabled == "") || $enabled == 0) return 0;
+        return 1;
+    }
+
+    /*
+     * Transform publish_on for persist.
+     *
+     * @param  datetime  $publish_on
+     * @return datetime
+     */
+    public function preparePublishOnForPersist($publish_on)
+    {
+        if
+        (
+            ($publish_on == "0000-00-00 00:00:00")
+            || ($publish_on == "")
+            || ($publish_on == "-0001-11-30 00:00:00")
+        )
+        {
+            // "use Carbon\Carbon"
+            return Carbon::now();
+        }
+
+        return $publish_on;
+    }
+
 
 
 

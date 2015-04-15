@@ -1,4 +1,4 @@
-<?php namespace Lasallecms\Lasallecmsapi\Postupdates;
+<?php namespace Lasallecms\Lasallecmsapi\Posts;
 
 /**
  *
@@ -35,52 +35,49 @@ use Lasallecms\Lasallecmsapi\Contracts\FormProcessing;
 // Form Processing Base Concrete Class
 use Lasallecms\Lasallecmsapi\FormProcessing\BaseFormProcessing;
 
-// Tag Repository Interface
-use Lasallecms\Lasallecmsapi\Contracts\PostupdateRepository;
+// Post Repository Interface
+use Lasallecms\Lasallecmsapi\Contracts\PostRepository;
 
 
 /*
  * Process an update.
  * Go through the standard process (interface).
  */
-class UpdatePostupdateFormProcessing extends BaseFormProcessing implements FormProcessing {
+class UpdatePostFormProcessing extends BaseFormProcessing implements FormProcessing {
 
 
     /*
      * Instance of repository
      *
-     * @var Lasallecms\Lasallecmsapi\Contracts\PostupdateRepository
+     * @var Lasallecms\Lasallecmsapi\Contracts\PostRepository
      */
     protected $repository;
 
     /*
      * Inject the model
      *
-     * @param  Lasallecms\Lasallecmsapi\Contracts\PostupdateRepository
+     * @param  Lasallecms\Lasallecmsapi\Contracts\PostRepository
      */
-    public function __construct(PostupdateRepository $repository) {
+    public function __construct(PostRepository $repository) {
         $this->repository = $repository;
     }
 
     /*
      * The processing steps.
      *
-     * @param  The command bus object   $updateTagCommand
+     * @param  The command bus object   $updatePostCommand
      * @return The custom response array
      */
-    public function quarterback($updateTagCommand) {
+    public function quarterback($updatePostCommand) {
 
         // Get inputs into array
-        $data = (array) $updateTagCommand;
+        $data = (array) $updatePostCommand;
 
         // Foreign Key check --> not applicable
         //$this->isForeignKeyOk($command);
 
         // Sanitize
-
-        // **** YO THERE!!!!!  ==> NEED SANITIZE AND VALIDATE RULES IN DA MODEL!!!!!!     *********
-
-
+        // THIS IS A FIRST PASS AT SANITIZING, BECAUSE A LOT MORE ACTION OCCURS IN persist()
         $data = $this->sanitize($data);
 
         // Validate
@@ -131,7 +128,10 @@ class UpdatePostupdateFormProcessing extends BaseFormProcessing implements FormP
      * @return bool
      */
     public function persist($data){
-        return $this->repository->updatePostupdate($data);
+        // Extra step: prepare data for persist
+        $data = $this->repository->preparePostForPersist($data);
+
+        return $this->repository->updatePost($data);
     }
 
 

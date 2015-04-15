@@ -80,13 +80,13 @@ class UpdateTagFormProcessing extends BaseFormProcessing implements FormProcessi
         $data = $this->sanitize($data);
 
         // Validate
-        if ($this->validate($data) != "passed")
+        if ($this->validate($data, "update") != "passed")
         {
             // Unlock the record
             $this->unlock($data['id']);
 
             // Prepare the response array, and then return to the edit form with error messages
-            return $this->prepareResponseArray('validation_failed', 500, $data, $this->validate($data));
+            return $this->prepareResponseArray('validation_failed', 500, $data, $this->validate($data, "update"));
         }
 
 

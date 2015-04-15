@@ -31,9 +31,22 @@
 
 use Lasallecms\Lasallecmsapi\Models\BaseModel;
 
-use Url;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Url;
+
 
 class Post extends BaseModel {
+
+
+    /**
+     * The database table used by the model.
+     *
+     * Want this for my slug method(s), instead of passing table as param
+     *
+     * @var string
+     */
+    public $table = 'posts';
+
 
     /**
      * Which fields may be mass assigned
@@ -43,6 +56,60 @@ class Post extends BaseModel {
         'title', 'slug', 'content', 'excerpt', 'meta_description', 'enabled', 'featured_image'
     ];
 
+    /**
+     * Sanitation rules for Create (INSERT)
+     *
+     * @var array
+     */
+    public $sanitationRulesForCreate = [
+        'title'            => 'trim|strip_tags',
+        'slug'             => 'trim',
+        'canonical_url'    => 'trim',
+        'content'          => 'trim',
+        'excerpt'          => 'trim|strip_tags',
+        'meta_description' => 'trim',
+        'featured_image'   => 'trim',
+    ];
+
+    /**
+     * Sanitation rules for UPDATE
+     *
+     * @var array
+     */
+    public $sanitationRulesForUpdate = [
+        'title'            => 'trim|strip_tags',
+        'slug'             => 'trim',
+        'canonical_url'    => 'trim',
+        'content'          => 'trim',
+        'excerpt'          => 'trim|strip_tags',
+        'meta_description' => 'trim',
+        'featured_image'   => 'trim',
+    ];
+
+
+    /**
+     * Validation rules for  Create (INSERT)
+     *
+     * NOTE: content field has 7 chars when blank!
+     *
+     * @var array
+     */
+    public $validationRulesForCreate = [
+        'title'            => 'required|min:4',
+        'content'          => 'required|min:11',
+    ];
+
+    /**
+     * Validation rules for UPDATE
+     *
+     * NOTE: content field has 7 chars when blank!
+     *
+     * @var array
+     */
+    public $validationRulesForUpdate = [
+        'title'            => 'required|min:4',
+        'content'          => 'required|min:11',
+    ];
 
 
     /*
@@ -52,7 +119,7 @@ class Post extends BaseModel {
     */
     public function category()
     {
-        return $this->belongsToMany('Lasallecms\Lasallecmsapi\Models\Category');
+        return $this->belongsToMany('Lasallecms\Lasallecmsapi\Models\Category', 'post_category');
     }
 
     /*
@@ -62,7 +129,7 @@ class Post extends BaseModel {
      */
     public function tag()
     {
-        return $this->belongsToMany('Lasallecms\Lasallecmsapi\Models\Tag');
+        return $this->belongsToMany('Lasallecms\Lasallecmsapi\Models\Tag', 'post_tag');
     }
 
     /*

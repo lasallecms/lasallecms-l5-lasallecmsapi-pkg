@@ -1,4 +1,4 @@
-<?php namespace Lasallecms\Lasallecmsapi\Postupdates;
+<?php namespace Lasallecms\Lasallecmsapi\Posts;
 
 /**
  *
@@ -35,71 +35,63 @@ use Lasallecms\Lasallecmsapi\Contracts\FormProcessing;
 // Form Processing Base Concrete Class
 use Lasallecms\Lasallecmsapi\FormProcessing\BaseFormProcessing;
 
-// Tag Repository Interface
-use Lasallecms\Lasallecmsapi\Contracts\PostupdateRepository;
+// Post Repository Interface
+use Lasallecms\Lasallecmsapi\Contracts\PostRepository;
 
 
 /*
- * Process an update.
+ * Process a new post .
  * Go through the standard process (interface).
  */
-class UpdatePostupdateFormProcessing extends BaseFormProcessing implements FormProcessing {
-
+class CreatePostFormProcessing extends BaseFormProcessing implements FormProcessing {
 
     /*
      * Instance of repository
      *
-     * @var Lasallecms\Lasallecmsapi\Contracts\PostupdateRepository
+     * @var Lasallecms\Lasallecmsapi\Contracts\PostRepository
      */
     protected $repository;
 
     /*
      * Inject the model
      *
-     * @param  Lasallecms\Lasallecmsapi\Contracts\PostupdateRepository
+     * @param  Lasallecms\Lasallecmsapi\Contracts\PostRepository
      */
-    public function __construct(PostupdateRepository $repository) {
+    public function __construct(PostRepository $repository) {
         $this->repository = $repository;
     }
 
     /*
      * The processing steps.
      *
-     * @param  The command bus object   $updateTagCommand
+     * @param  The command bus object   $createPostCommand
      * @return The custom response array
      */
-    public function quarterback($updateTagCommand) {
+    public function quarterback($createPostCommand) {
 
         // Get inputs into array
-        $data = (array) $updateTagCommand;
+        $data = (array) $createPostCommand;
 
         // Foreign Key check --> not applicable
         //$this->isForeignKeyOk($command);
 
         // Sanitize
-
-        // **** YO THERE!!!!!  ==> NEED SANITIZE AND VALIDATE RULES IN DA MODEL!!!!!!     *********
-
-
+        // THIS IS A FIRST PASS AT SANITIZING, BECAUSE A LOT MORE ACTION OCCURS IN persist()
         $data = $this->sanitize($data);
 
-        // Validate
-        if ($this->validate($data, "update") != "passed")
-        {
-            // Unlock the record
-            $this->unlock($data['id']);
 
+
+        // Validate
+        if ($this->validate($data, "create") != "passed")
+        {
             // Prepare the response array, and then return to the edit form with error messages
-            return $this->prepareResponseArray('validation_failed', 500, $data, $this->validate($data, "update"));
+            return $this->prepareResponseArray('validation_failed', 500, $data, $this->validate($data, "create"));
         }
 
 
-        // Update
+        // Create
         if (!$this->persist($data))
         {
-            // Unlock the record
-            $this->unlock($data['id']);
-
             // Prepare the response array, and then return to the edit form with error messages
             // Laravel's https://github.com/laravel/framework/blob/5.0/src/Illuminate/Database/Eloquent/Model.php
             //  does not prepare a MessageBag object, so we'll whip up an error message in the
@@ -107,11 +99,11 @@ class UpdatePostupdateFormProcessing extends BaseFormProcessing implements FormP
             return $this->prepareResponseArray('persist_failed', 500, $data);
         }
 
-        // Unlock the record
-        $this->unlock($data['id']);
+        // Unlock the record --> not applicable
+        //$this->unlock($data['id']);
 
         // Prepare the response array, and then return to the command
-        return $this->prepareResponseArray('update_successful', 200, $data);
+        return $this->prepareResponseArray('create_successful', 200, $data);
 
     }
 
@@ -124,14 +116,19 @@ class UpdatePostupdateFormProcessing extends BaseFormProcessing implements FormP
      */
     public function isForeignKeyOk($data){}
 
+
     /*
-     * Persist --> save/update to the database
+     * Persist --> save/create to the database
      *
      * @param  array  $data
      * @return bool
      */
     public function persist($data){
-        return $this->repository->updatePostupdate($data);
+
+        // Extra step: prepare data for persist
+        $data = $this->repository->preparePostForPersist($data);
+
+        return $this->repository->createPost($data);
     }
 
 
