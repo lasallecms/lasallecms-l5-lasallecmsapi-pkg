@@ -1,4 +1,5 @@
-<?php namespace Lasallecms\Lasallecmsapi\Repositories;
+<?php
+namespace Lasallecms\Lasallecmsapi\Repositories;
 
 /**
  *
@@ -29,20 +30,17 @@
  *
  */
 
-use Lasallecms\Lasallecmsapi\Contracts\PostupdateRepository;
-
+// LaSalle Software
 use Lasallecms\Lasallecmsapi\Models\Postupdate;
 
+// Laravel facades
 use Illuminate\Support\Facades\Auth;
+
+// Third party classes
 use Carbon\Carbon;
 
-
-/*
- * Eloquent implementation of the Post Update repository
- */
-class PostupdateEloquent extends BaseEloquent implements PostupdateRepository {
-
-
+class PostupdateRepository extends BaseRepository
+{
     /*
      * Instance of model
      *
@@ -173,7 +171,4 @@ class PostupdateEloquent extends BaseEloquent implements PostupdateRepository {
         if ($saveWentOk) return true;
         return false;
     }
-
-
-
 }

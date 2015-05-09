@@ -1,4 +1,5 @@
-<?php namespace Lasallecms\Lasallecmsapi\Posts;
+<?php
+namespace Lasallecms\Lasallecmsapi\Posts;
 
 /**
  *
@@ -29,37 +30,33 @@
  *
  */
 
-// Form Processing Interface
-use Lasallecms\Lasallecmsapi\Contracts\FormProcessing;
-
-// Form Processing Base Concrete Class
+// LaSalle Software
+use Lasallecms\Lasallecmsapi\Repositories\PostRepository;
 use Lasallecms\Lasallecmsapi\FormProcessing\BaseFormProcessing;
-
-// Tag Repository Interface
-use Lasallecms\Lasallecmsapi\Contracts\PostRepository;
-
 
 /*
  * Process a deletion.
- * Go through the standard process (interface).
  */
-class DeletePostFormProcessing extends BaseFormProcessing implements FormProcessing {
-
+class DeletePostFormProcessing extends BaseFormProcessing
+{
     /*
      * Instance of repository
      *
-     * @var Lasallecms\Lasallecmsapi\Contracts\PostRepository
+     * @var Lasallecms\Lasallecmsapi\Repositories\PostRepository
      */
     protected $repository;
+
 
     /*
      * Inject the model
      *
-     * @param  Lasallecms\Lasallecmsapi\Contracts\PostRepository
+     * @param  Lasallecms\Lasallecmsapi\Repositories\PostRepository
      */
-    public function __construct(PostRepository $repository) {
+    public function __construct(PostRepository $repository)
+    {
         $this->repository = $repository;
     }
+
 
     /*
      * The processing steps.
@@ -67,8 +64,8 @@ class DeletePostFormProcessing extends BaseFormProcessing implements FormProcess
      * @param  The command bus object   $deletePostCommand
      * @return The custom response array
      */
-    public function quarterback($deletePostCommand) {
-
+    public function quarterback($deletePostCommand)
+    {
         // Get inputs into array
         $data = (array) $deletePostCommand;
 
@@ -93,8 +90,8 @@ class DeletePostFormProcessing extends BaseFormProcessing implements FormProcess
 
         // Prepare the response array, and then return to the command
         return $this->prepareResponseArray('create_successful', 200, $data);
-
     }
+
 
     /*
      * Any constraints to check due to foreign keys
@@ -104,15 +101,15 @@ class DeletePostFormProcessing extends BaseFormProcessing implements FormProcess
      */
     public function isForeignKeyOk($data){}
 
+
     /*
      * Persist --> save/create to the database
      *
      * @param  array  $data
      * @return bool
      */
-    public function persist($data){
+    public function persist($data)
+    {
         return $this->repository->getDestroy($data['id']->id);
     }
-
-
 }

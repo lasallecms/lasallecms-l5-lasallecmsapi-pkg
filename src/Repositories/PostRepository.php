@@ -1,4 +1,5 @@
-<?php namespace Lasallecms\Lasallecmsapi\Repositories;
+<?php
+namespace Lasallecms\Lasallecmsapi\Repositories;
 
 /**
  *
@@ -29,22 +30,19 @@
  *
  */
 
-use Lasallecms\Lasallecmsapi\Contracts\PostRepository;
-
-use Lasallecms\Lasallecmsapi\Contracts\CategoryRepository;
-use Lasallecms\Lasallecmsapi\Contracts\TagRepository;
+// LaSalle Software
+use Lasallecms\Lasallecmsapi\Repositories\CategoryRepository;
+use Lasallecms\Lasallecmsapi\Repositories\TagRepository;
 use Lasallecms\Lasallecmsapi\Models\Post;
 
+// Laravel facades
 use Illuminate\Support\Facades\Auth;
+
+// Third party classes
 use Carbon\Carbon;
 
-
-/*
- * Eloquent implementation of the Post repository
- */
-class PostEloquent extends BaseEloquent implements PostRepository {
-
-
+class PostRepository extends BaseRepository
+{
     /*
      * Instance of model
      *
@@ -55,14 +53,14 @@ class PostEloquent extends BaseEloquent implements PostRepository {
     /*
      * Instance of Category Repository
      *
-     * @var Lasallecms\Lasallecmsapi\Contracts\CategoryRepository
+     * @var Lasallecms\Lasallecmsapi\Repositories\CategoryRepository
      */
     protected $categoryRepository;
 
     /*
      * Instance of Tag Repository
      *
-     * @var Lasallecms\Lasallecmsapi\Contracts\TagRepository
+     * @var Lasallecms\Lasallecmsapi\Repositories\TagRepository
      */
     protected $tagRepository;
 
@@ -71,8 +69,8 @@ class PostEloquent extends BaseEloquent implements PostRepository {
      * Inject the model
      *
      * @param  Lasallecms\Lasallecmsapi\Models\Post
-     * @param  Lasallecms\Lasallecmsapi\Contracts\CategoryRepository
-     * @param  Lasallecms\Lasallecmsapi\Contracts\TagRepository
+     * @param  Lasallecms\Lasallecmsapi\Repositories\CategoryRepository
+     * @param  Lasallecms\Lasallecmsapi\Repositories\TagRepository
      */
     public function __construct(Post $model, CategoryRepository $categoryRepository, TagRepository $tagRepository)
     {
@@ -345,10 +343,4 @@ class PostEloquent extends BaseEloquent implements PostRepository {
             $post->tag()->sync($newIds);
         }
     }
-
-
-
-
-
-
 }

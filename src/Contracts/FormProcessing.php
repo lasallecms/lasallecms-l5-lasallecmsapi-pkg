@@ -1,4 +1,5 @@
-<?php namespace Lasallecms\Lasallecmsapi\Contracts;
+<?php
+namespace Lasallecms\Lasallecmsapi\Contracts;
 
 /**
  *
@@ -29,9 +30,8 @@
  *
  */
 
-
-interface FormProcessing {
-
+interface FormProcessing
+{
     /*
      * In charge of the form process.
      *
@@ -99,5 +99,4 @@ interface FormProcessing {
      *                                 https://github.com/laravel/framework/blob/5.0/src/Illuminate/Support/MessageBag.php
      */
     public function prepareResponseArray($status_text, $status_code, $data = null, $errorMessages = null);
-
 }

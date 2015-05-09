@@ -1,4 +1,5 @@
-<?php namespace Lasallecms\Lasallecmsapi\Posts;
+<?php
+namespace Lasallecms\Lasallecmsapi\Posts;
 
 /**
  *
@@ -29,35 +30,29 @@
  *
  */
 
-// Form Processing Interface
-use Lasallecms\Lasallecmsapi\Contracts\FormProcessing;
-
-// Form Processing Base Concrete Class
+// LaSalle Software
+use Lasallecms\Lasallecmsapi\Repositories\PostRepository;
 use Lasallecms\Lasallecmsapi\FormProcessing\BaseFormProcessing;
-
-// Post Repository Interface
-use Lasallecms\Lasallecmsapi\Contracts\PostRepository;
-
 
 /*
  * Process a new post .
- * Go through the standard process (interface).
  */
-class CreatePostFormProcessing extends BaseFormProcessing implements FormProcessing {
-
+class CreatePostFormProcessing extends BaseFormProcessing
+{
     /*
      * Instance of repository
      *
-     * @var Lasallecms\Lasallecmsapi\Contracts\PostRepository
+     * @var Lasallecms\Lasallecmsapi\Repositories\PostRepository
      */
     protected $repository;
 
     /*
      * Inject the model
      *
-     * @param  Lasallecms\Lasallecmsapi\Contracts\PostRepository
+     * @param Lasallecms\Lasallecmsapi\Repositories\PostRepository
      */
-    public function __construct(PostRepository $repository) {
+    public function __construct(PostRepository $repository)
+    {
         $this->repository = $repository;
     }
 
@@ -67,8 +62,8 @@ class CreatePostFormProcessing extends BaseFormProcessing implements FormProcess
      * @param  The command bus object   $createPostCommand
      * @return The custom response array
      */
-    public function quarterback($createPostCommand) {
-
+    public function quarterback($createPostCommand)
+    {
         // Get inputs into array
         $data = (array) $createPostCommand;
 
@@ -104,7 +99,6 @@ class CreatePostFormProcessing extends BaseFormProcessing implements FormProcess
 
         // Prepare the response array, and then return to the command
         return $this->prepareResponseArray('create_successful', 200, $data);
-
     }
 
 
@@ -123,13 +117,12 @@ class CreatePostFormProcessing extends BaseFormProcessing implements FormProcess
      * @param  array  $data
      * @return bool
      */
-    public function persist($data){
+    public function persist($data)
+    {
 
         // Extra step: prepare data for persist
-        $data = $this->repository->preparePosttForPersist($data);
+        $data = $this->repository->preparePostForPersist($data);
 
         return $this->repository->createPost($data);
     }
-
-
 }

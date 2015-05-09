@@ -1,4 +1,5 @@
-<?php namespace Lasallecms\Lasallecmsapi\Repositories;
+<?php
+namespace Lasallecms\Lasallecmsapi\Repositories;
 
 /**
  *
@@ -29,15 +30,75 @@
  *
  */
 
-use Lasallecms\Lasallecmsapi\Contracts\BaseRepository;
+/*
+ * This is the common base repository for all LaSalle Software, except LaSalleMart
+ */
 
+// Laravel facades
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\URL;
 
-class BaseEloquent implements BaseRepository {
+// Laravel classes
+use Illuminate\Container\Container as Container;
+
+// Third party classes
+use Carbon\Carbon;
+
+class BaseRepository
+{
+    ///////////////////////////////////////////////////////////////////
+    //////////////////////       PROPERTIES       /////////////////////
+    ///////////////////////////////////////////////////////////////////
+
+    /*
+     * @var Illuminate\Container\Container
+     */
+    protected $app;
+
+    /*
+     * @var  namespace and class of relevant model
+     */
+    protected $model;
+
+
+    ///////////////////////////////////////////////////////////////////
+    /////////////////////       CONSTRUCTOR       /////////////////////
+    ///////////////////////////////////////////////////////////////////
+
+    /*
+     * Inject a new instance of the container in order to inject the relevant model.
+     */
+    public function __construct()
+    {
+        $this->app   = new Container;
+    }
+
+
+    ///////////////////////////////////////////////////////////////////
+    //////////////////////    MODEL INJECTION     /////////////////////
+    ///////////////////////////////////////////////////////////////////
+
+    /*
+     *
+     * Inject the container, then use the container to inject the model object
+     * "Resolve something out of the container"
+     * http://laravel.com/docs/5.0/container#basic-usage
+     *
+     * Called from controller
+     *
+     * @param  string   $modelNamespaceClass  The model's concatenated namespace and class name
+     */
+    public function injectModelIntoRepository($modelNamespaceClass)
+    {
+        $this->model = $this->app->make($modelNamespaceClass);
+    }
+
+
+    ///////////////////////////////////////////////////////////////////
+    ////       LARAVEL MODEL METHODS IN REPOSITORY FORM       /////////
+    ///////////////////////////////////////////////////////////////////
 
     /*
      * Return entire collection
@@ -48,7 +109,6 @@ class BaseEloquent implements BaseRepository {
     {
         return $this->model->all();
     }
-
 
     /*
      * Return specific model
@@ -134,9 +194,88 @@ class BaseEloquent implements BaseRepository {
     }
 
 
+    ///////////////////////////////////////////////////////////////////
+    ////////////////////      USER GROUPS         /////////////////////
+    ///////////////////////////////////////////////////////////////////
+
+    /*
+     * Is the user allowed to do an action
+     *
+     * @param   string   $action   Generally: index, create, store, edit, insert, destroy
+     * @return  bool
+     */
+    public function isUserAllowed($action)
+    {
+        $this->groupIdTitle(1);
+
+        // Get the user's group.
+        // Returns array of objects.
+        $userGroups = $this->userBelongsToTheseGroups();
+
+        // Array of allowed groups from the model
+        $allowedGroups = $this->allowedGroupsForThisActionByModel($action);
+
+        // Cycle through all the allowed groups, to see if the user belongs to one of these allowed groups.
+        // One match is all it takes!
+        foreach ($allowedGroups as $allowedGroup)
+        {
+            // Cycle through all the groups the user belongs to
+            foreach ($userGroups as $userGroup)
+            {
+                //debug
+                //echo "<br>".$this->groupIdTitle($userGroup->group_id)." and ".$allowedGroup;
+                if (
+                    (strtolower($this->groupIdTitle($userGroup->group_id)))
+                    ==
+                    (strtolower($allowedGroup))
+                ) return true;
+            }
+        }
+        return false;
+    }
+
+    /*
+     * What groups does the model specify are allowed to do the controller's action.
+     * Put another way, what group can do the index() for a specific controller?
+     * This array resides in the model class.
+     *
+     * @param string   $action   A particular controller's action (method) -- just for that controller,
+     *                                                                        *NOT* generically for all controllers!
+     * @return array
+     */
+    public function allowedGroupsForThisActionByModel($action)
+    {
+        $allowedUserGroupsForAllActions = $this->model->getAllowedUserGroups();
+
+        //http://laravel.com/docs/4.2/helpers#arrays
+        return array_flatten( array_fetch($allowedUserGroupsForAllActions, $action) );
+    }
+
+    /*
+     * What groups does the user belong?
+     *
+     * @return object
+     */
+    public function userBelongsToTheseGroups()
+    {
+        return DB::table('user_group')->where('user_id', '=', Auth::user()->id)->get();
+    }
+
+    /*
+     * What is the title field for a given group_id, in the groups database table?
+     *
+     * @param  int   $group_id
+     * @return string
+     */
+    public function groupIdTitle($group_id)
+    {
+        return DB::table('groups')->where('id', $group_id)->pluck('title');
+    }
+
+
 
     ///////////////////////////////////////////////////////////////////
-    ///////////////////////////  LOCK FIELDS  /////////////////////////
+    ////////////////////      LOCK FIELDS         /////////////////////
     ///////////////////////////////////////////////////////////////////
 
     /*
@@ -232,6 +371,22 @@ class BaseEloquent implements BaseRepository {
 
 
     ///////////////////////////////////////////////////////////////////
+    //////////////     Foreign Key Constraint       ///////////////////
+    ///////////////////////////////////////////////////////////////////
+
+    /*
+     * Is a table record used in another table?
+     *
+     * @param   int  $id  Lookup Table ID
+     * @return  int
+     */
+    public function foreignKeyChecks($id)
+    {
+        return $this->model->foreignKeyCheck($id);
+    }
+
+
+    ///////////////////////////////////////////////////////////////////
     ///////////////////////////  SANITATION   /////////////////////////
     ///////////////////////////////////////////////////////////////////
     /*
@@ -252,6 +407,36 @@ class BaseEloquent implements BaseRepository {
     public function getSanitationRulesForUpdate()
     {
         return $this->model->sanitationRulesForUpdate;
+    }
+
+    /*
+     * For Lookup Tables
+     *
+     * Get sanitation array for INSERT from model
+     *
+     * @return array
+     */
+    public function getLookupTablesSanitationRulesForCreate()
+    {
+        return [
+            'title'            => 'trim|strip_tags',
+            'description'      => 'trim',
+        ];
+    }
+
+    /*
+     * For Lookup Tables
+     *
+     * Get sanitation array for UPDATE from model
+     *
+     * @return array
+     */
+    public function getLookupTablesSanitationRulesForUpdate()
+    {
+        return [
+            'title'            => 'trim|strip_tags',
+            'description'      => 'trim',
+        ];
     }
 
     /*
@@ -308,6 +493,38 @@ class BaseEloquent implements BaseRepository {
     }
 
 
+    /*
+     * For Lookup Tables
+     *
+     * Get validation array for INSERT from model
+     *
+     * @return array
+     */
+    public function getLookupTablesValidationRulesForCreate()
+    {
+        return [
+            'title'            => 'required|min:4|unique:'.$this->model->table,
+            'description'      => 'min:11',
+            'enabled'          => 'boolean',
+        ];
+    }
+
+    /*
+     * For Lookup Tables
+     *
+     * Get validation array for UPDATE from model
+     *
+     * @return array
+     */
+    public function getLookupTablesValidationRulesForUpdate()
+    {
+        return [
+            'title'            => 'required|min:4',
+            'description'      => 'min:11',
+            'enabled'          => 'boolean',
+        ];
+    }
+
 
 
     ///////////////////////////////////////////////////////////////////
@@ -336,6 +553,26 @@ class BaseEloquent implements BaseRepository {
         $transformedTitle = ucwords($transformedTitle);
 
         return $transformedTitle;
+    }
+
+    /*
+     * Transform description for persist.
+     *
+     * @param  text  $meta_description
+     * @param  text  $excerpt
+     * @return text
+     */
+    public function prepareDescriptionForPersist($description)
+    {
+        $description = html_entity_decode($description);
+        $description = strip_tags($description);
+        $description = filter_var($description, FILTER_SANITIZE_STRING);
+
+        // remove the encoded blank chars
+        $description = str_replace("\xc2\xa0",'',$description);
+
+        $description = trim($description);
+        return $description;
     }
 
     /*
@@ -540,8 +777,13 @@ class BaseEloquent implements BaseRepository {
         return $publish_on;
     }
 
-
-
-
+    /*
+     * Return a new instance of the model.
+     * For CREATE
+     */
+    public function newModelInstance()
+    {
+        return new $this->model;
+    }
 
 }

@@ -1,4 +1,5 @@
-<?php namespace Lasallecms\Lasallecmsapi\Models;
+<?php
+namespace Lasallecms\Lasallecmsapi\Models;
 
 /**
  *
@@ -29,59 +30,59 @@
  *
  */
 
+/*
+ * TAGS IS A LOOKUP TABLE!
+ */
+
+// LaSalle Software
 use Lasallecms\Lasallecmsapi\Models\BaseModel;
 
-class Tag extends BaseModel {
+// Laravel facades
+use Illuminate\Support\Facades\DB;
+
+class Tag extends BaseModel
+{
+    ///////////////////////////////////////////////////////////////////
+    //////////////          PROPERTIES              ///////////////////
+    ///////////////////////////////////////////////////////////////////
+
+    /**
+     * The database table used by the model.
+     *
+     * @var string
+     */
+    public $table = 'tags';
 
     /**
      * Which fields may be mass assigned
      * @var array
      */
-    protected $fillable = ['title', 'description', 'enabled'];
-
-
-    /**
-     * Sanitation rules for Create (INSERT)
-     *
-     * @var array
-     */
-    public $sanitationRulesForCreate = [
-        'title'       => 'trim|strip_tags',
-        'description' => 'trim',
+    protected $fillable = [
+        'title', 'description', 'enabled'
     ];
 
-    /**
-     * Sanitation rules for UPDATE
-     *
-     * @var array
+    /*
+     * User groups that are allowed to execute each controller action
      */
-    public $sanitationRulesForUpdate = [
-        'description' => 'trim',
+    protected $allowed_user_groups = [
+        ['index'   => ['Super Administrator']],
+        ['create'  => ['Super Administrator']],
+        ['store'   => ['Super Administrator']],
+        ['edit'    => ['Super Administrator']],
+        ['update'  => ['Super Administrator']],
+        ['destroy' => ['Super Administrator']],
     ];
 
 
-    /**
-     * Validation rules for  Create (INSERT)
-     *
-     * @var array
-     */
-    public $validationRulesForCreate = [
-        'title'       => 'required|min:4|unique:tags',
-        'description' => 'required|min:4',
-    ];
 
-    /**
-     * Validation rules for UPDATE
-     *
-     * @var array
-     */
-    public $validationRulesForUpdate = [
-        'description' => 'required|min:4',
-    ];
-
+    ///////////////////////////////////////////////////////////////////
+    //////////////        RELATIONSHIPS             ///////////////////
+    ///////////////////////////////////////////////////////////////////
 
     /*
      * Many tags per single post
+     *
+     *  Method name must be the model name, *not* the table name
      *
      * @return Eloquent
      */
@@ -92,4 +93,37 @@ class Tag extends BaseModel {
 
 
 
+    ///////////////////////////////////////////////////////////////////
+    ////////////        FOREIGN KEY CONSTRAINTS       /////////////////
+    ///////////////////////////////////////////////////////////////////
+
+    /*
+     * Return an array of all the tables using a specified lookup table id.
+     * The array is in the form ['table related to the lookup table' => 'count']
+     *
+     * @param   int   $id   Table ID
+     * @return  array
+     */
+    public function foreignKeyCheck($id)
+    {
+        // 'related_table' is the table name
+        return  [
+            [ 'related_table' => 'posts', 'count' => $this->postsCount($id) ],
+        ];
+    }
+
+    /*
+     * Count of related table using lookup table.
+     *
+     * Method name is the table name (no techie reason, just a convention to adopt)
+     *
+     * @return int
+     */
+    public function postsCount($id)
+    {
+        // I know eloquent does this, but having trouble so hand crafting using DB
+        // Note the use of a pivot table due tot he "many" relationship
+        $record =  DB::table('post_tag')->where('tag_id', '=', $id)->get();
+        return count($record);
+    }
 }

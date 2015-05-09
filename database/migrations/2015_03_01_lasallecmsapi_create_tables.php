@@ -71,6 +71,7 @@ class CreateTables extends Migration {
         }
 
 
+        // TAGS is a lookup table, although the table name is not prefixed with "lookup_"
         if (!Schema::hasTable('tags'))
         {
             Schema::create('tags', function (Blueprint $table)
@@ -115,7 +116,7 @@ class CreateTables extends Migration {
                 $table->text('canonical_url');
                 $table->string('featured_image');
 
-                $table->boolean('enabled')->default(true);
+                $table->boolean('enabled')->defalookup_address_typeult(true);
 
                 $table->date('publish_on');
 
@@ -269,6 +270,4 @@ class CreateTables extends Migration {
         // Enable foreign key constraints
         DB::statement('SET FOREIGN_KEY_CHECKS = 1');
 	}
-
-
 }

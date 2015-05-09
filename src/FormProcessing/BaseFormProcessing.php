@@ -1,4 +1,5 @@
-<?php namespace Lasallecms\Lasallecmsapi\FormProcessing;
+<?php
+namespace Lasallecms\Lasallecmsapi\FormProcessing;
 
 /**
  *
@@ -29,10 +30,38 @@
  *
  */
 
-// Laravel's Validator facade
-use Validator;
+// LaSalle Software
+use Lasallecms\Lasallecmsapi\Contracts\FormProcessing;
 
-class BaseFormProcessing {
+// Laravel facades
+use Illuminate\Support\Facades\Validator;
+
+class BaseFormProcessing implements FormProcessing
+{
+    /*
+     * In charge of the form process.
+     *
+     * Return a status message.
+     *
+     * @param  mixed  $command
+     * @return text
+     */
+    public function quarterback($command)
+    {
+        parent::quarterback($command);
+    }
+
+
+    /*
+     * Any constraints to check due to foreign keys
+     *
+     * @param  array  $data
+     * @return bool
+     */
+    public function isForeignKeyOk($data)
+    {
+        parent::isForeignKeyOk($data);
+    }
 
 
     /*
@@ -42,8 +71,8 @@ class BaseFormProcessing {
      * @param  text   $type   Either "create" or "update"
      * @return array
      */
-    public function sanitize($data, $type){
-
+    public function sanitize($data, $type)
+    {
         if (strtolower($type) == "create") $rules = $this->repository->getSanitationRulesForCreate();
 
         if (strtolower($type) == "update") $rules = $this->repository->getSanitationRulesForUpdate();
@@ -53,6 +82,7 @@ class BaseFormProcessing {
         return $sanitizedData;
     }
 
+
     /*
      * Validate
      *
@@ -60,8 +90,8 @@ class BaseFormProcessing {
      * @param  text   $type   Are we validating a create or update?
      * @return bool
      */
-    public function validate($data, $type){
-
+    public function validate($data, $type)
+    {
         if (strtolower($type) == "create") $rules = $this->repository->getValidationRulesForCreate();
 
         if (strtolower($type) == "update") $rules = $this->repository->getValidationRulesForUpdate();
@@ -73,6 +103,19 @@ class BaseFormProcessing {
         return "passed";
     }
 
+
+    /*
+     * Persist --> save/update to the database
+     *
+     * @param  array  $data
+     * @return bool
+     */
+    public function persist($data)
+    {
+        parent::persist($data);
+    }
+
+
     /*
      * Unlock the record.
      * "Locked" is defined as the 'locked_by' field being populated; that is,> 0
@@ -80,9 +123,11 @@ class BaseFormProcessing {
      * @param  int   $id
      * @return bool
      */
-    public function unlock($id){
+    public function unlock($id)
+    {
         $this->repository->unpopulateLockFields($id);
     }
+
 
     /*
      * Prepare the response array.
@@ -97,7 +142,8 @@ class BaseFormProcessing {
      * @param  object  $errorMessages  Expect this to be
      *                                 https://github.com/laravel/framework/blob/5.0/src/Illuminate/Support/MessageBag.php
      */
-    public function prepareResponseArray($status_text, $status_code, $data = null, $errorMessages = null){
+    public function prepareResponseArray($status_text, $status_code, $data = null, $errorMessages = null)
+    {
         $response = [
             'status_text'   => $status_text,
             'status_code'   => $status_code,

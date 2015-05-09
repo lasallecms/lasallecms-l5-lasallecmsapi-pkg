@@ -1,4 +1,5 @@
-<?php namespace Lasallecms\Lasallecmsapi\Repositories;
+<?php
+namespace Lasallecms\Lasallecmsapi\Repositories;
 
 /**
  *
@@ -29,19 +30,15 @@
  *
  */
 
-use Lasallecms\Lasallecmsapi\Contracts\CategoryRepository;
-
+// LaSalle Software
+use Lasallecms\Lasallecmsapi\Repositories\BaseRepository;
 use Lasallecms\Lasallecmsapi\Models\Category;
 
+// Laravel facades
 use Illuminate\Support\Facades\Auth;
 
-
-/*
- * Eloquent implementation of the Tag repository
- */
-class CategoryEloquent extends BaseEloquent implements CategoryRepository {
-
-
+class CategoryRepository extends BaseRepository
+{
     /*
      * Instance of model
      *
@@ -130,7 +127,4 @@ class CategoryEloquent extends BaseEloquent implements CategoryRepository {
         $category->parent_id   = $data['parent_id'];
         return $category->save();
     }
-
-
-
 }

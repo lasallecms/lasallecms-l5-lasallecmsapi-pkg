@@ -1,4 +1,5 @@
-<?php namespace Lasallecms\Lasallecmsapi\Contracts;
+<?php
+namespace Lasallecms\Lasallecmsapi\Repositories;
 
 /**
  *
@@ -30,10 +31,32 @@
  */
 
 
-/**
- *
- * Note that we extend from BaseRepository, so any class that implements
- * this interface must also provide all the standard eloquent methods (find, all, etc.)
- *
- */
-interface UserRepository extends BaseRepository { }
+//class TagRepository extends BaseRepository
+class TagRepository
+{
+    /*
+     * Display all the tags in the admin listing
+     *
+     * @return collection
+     */
+    public function allTagsForDisplayOnAdminListing()
+    {
+        return $this->model->orderBy('title', 'ASC')->get();
+    }
+
+
+    /*
+     * Find all the post records associated with a tag
+     *
+     * @param id  $id
+     * @return int
+     */
+    public function countAllPostsThatHaveTagId($id)
+    {
+        $tag = $this->getFind($id);
+        $tagsWithPosts = $tag->posts;
+        return count($tagsWithPosts);
+    }
+
+
+}

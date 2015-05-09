@@ -1,4 +1,5 @@
-<?php namespace Lasallecms\Lasallecmsapi\Models;
+<?php
+namespace Lasallecms\Lasallecmsapi\Models;
 
 /**
  *
@@ -29,9 +30,12 @@
  *
  */
 
-
+// Laravel classes
 use Illuminate\Database\Eloquent\Model as Eloquent;
 
+/*
+ * Base Modelfor LaSalle Software, except LaSalleMart
+ */
 class BaseModel extends Eloquent
 {
     /*
@@ -43,5 +47,18 @@ class BaseModel extends Eloquent
         // https://laracasts.com/series/digging-in/episodes/8
         // parent's boot function should occur first
         parent::boot();
+    }
+
+
+    ///////////////////////////////////////////////////////////////////
+    ////////////////////         GETTERS          /////////////////////
+    ///////////////////////////////////////////////////////////////////
+
+    /*
+     * Get the array of allowed user roles for the model
+     */
+    public function getAllowedUserGroups()
+    {
+        return $this->allowed_user_groups;
     }
 }

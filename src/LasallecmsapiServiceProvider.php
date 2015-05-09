@@ -1,4 +1,5 @@
-<?php namespace Lasallecms\Lasallecmsapi;
+<?php
+namespace Lasallecms\Lasallecmsapi;
 
 /**
  *
@@ -29,18 +30,17 @@
  *
  */
 
-
+// Laravel classes
 use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
-
 
 /**
  * This is the User Management service provider class.
  *
  * @author Bob Bloom <info@southlasalle.com>
  */
-class LasallecmsapiServiceProvider extends ServiceProvider {
-
+class LasallecmsapiServiceProvider extends ServiceProvider
+{
     /**
      * Indicates if loading of the provider is deferred.
      *
@@ -115,13 +115,6 @@ class LasallecmsapiServiceProvider extends ServiceProvider {
     public function register()
     {
         $this->registerLasallecmsapi();
-
-        // Bind repository interfaces with their implementations
-        $this->registerCategory();
-        $this->registerPost();
-        $this->registerPostupdate();
-        $this->registerTag();
-        $this->registerUser();
     }
 
 
@@ -139,69 +132,6 @@ class LasallecmsapiServiceProvider extends ServiceProvider {
 
 
     /**
-     * Register the Category service provider.
-     *
-     * @return void
-     */
-    public function registerCategory()
-    {
-        $this->app->bind(
-            'Lasallecms\Lasallecmsapi\Contracts\CategoryRepository',
-            'Lasallecms\Lasallecmsapi\Repositories\CategoryEloquent'
-        );
-    }
-    /**
-     * Register the POST service provider.
-     *
-     * @return void
-     */
-    public function registerPost()
-    {
-        $this->app->bind(
-            'Lasallecms\Lasallecmsapi\Contracts\PostRepository',
-            'Lasallecms\Lasallecmsapi\Repositories\PostEloquent'
-        );
-    }
-    /**
-     * Register the POSTUPDATE service provider.
-     *
-     * @return void
-     */
-    public function registerPostupdate()
-    {
-        $this->app->bind(
-            'Lasallecms\Lasallecmsapi\Contracts\PostupdateRepository',
-            'Lasallecms\Lasallecmsapi\Repositories\PostupdateEloquent'
-        );
-    }
-    /**
-     * Register the Tag service provider.
-     *
-     * @return void
-     */
-    public function registerTag()
-    {
-        $this->app->bind(
-            'Lasallecms\Lasallecmsapi\Contracts\TagRepository',
-            'Lasallecms\Lasallecmsapi\Repositories\TagEloquent'
-        );
-    }
-    /**
-     * Register the User service provider.
-     *
-     * @return void
-     */
-    public function registerUser()
-    {
-        $this->app->bind(
-            'Lasallecms\Lasallecmsapi\Contracts\UserRepository',
-            'Lasallecms\Lasallecmsapi\Repositories\UserEloquent'
-        );
-    }
-
-
-
-    /**
      * Define the routes for the application.
      *
      * @param  \Illuminate\Routing\Router  $router
@@ -215,6 +145,4 @@ class LasallecmsapiServiceProvider extends ServiceProvider {
         });
 
     }
-
-
 }

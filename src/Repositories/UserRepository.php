@@ -1,4 +1,5 @@
-<?php namespace Lasallecms\Lasallecmsapi\Repositories;
+<?php
+namespace Lasallecms\Lasallecmsapi\Repositories;
 
 /**
  *
@@ -29,19 +30,14 @@
  *
  */
 
-use Lasallecms\Lasallecmsapi\Contracts\UserRepository;
-
+// LaSalle Software
 use Lasallecms\Usermanagement\Models\User;
 
+// Laravel facades
 use Illuminate\Support\Facades\Auth;
 
-
-/*
- * Eloquent implementation of the User repository
- */
-class UserEloquent extends BaseEloquent implements UserRepository {
-
-
+class UserRepository extends BaseRepository
+{
     /*
      * Instance of model
      *
@@ -168,7 +164,4 @@ class UserEloquent extends BaseEloquent implements UserRepository {
 
         return $user->save();
     }
-
-
-
 }
