@@ -378,11 +378,32 @@ class BaseRepository
      * Is a table record used in another table?
      *
      * @param   int  $id  Lookup Table ID
-     * @return  int
+     * @return  array
      */
     public function foreignKeyChecks($id)
     {
         return $this->model->foreignKeyCheck($id);
+    }
+
+
+    ///////////////////////////////////////////////////////////////////
+    //////////////          DO NOT DELETE           ///////////////////
+    ///////////////////////////////////////////////////////////////////
+
+    /*
+     * Is this record not supposed to be deleted?
+     *
+     * @param   int  $id  Lookup Table ID
+     * @return  bool
+     */
+    public function doNotDelete($id)
+    {
+        $table             = $this->model->getTable();
+        $titlesDoNotDelete = $this->model->getDoNotDelete();
+        $titleToBeDeleted  = DB::table($table)->where('id', '=', $id)->pluck('title');
+
+        if (in_array($titleToBeDeleted, $titlesDoNotDelete)) return true;
+        return false;
     }
 
 
@@ -504,7 +525,7 @@ class BaseRepository
     {
         return [
             'title'            => 'required|min:4|unique:'.$this->model->table,
-            'description'      => 'min:11',
+            'description'      => 'min:4',
             'enabled'          => 'boolean',
         ];
     }
@@ -520,7 +541,7 @@ class BaseRepository
     {
         return [
             'title'            => 'required|min:4',
-            'description'      => 'min:11',
+            'description'      => 'min:4',
             'enabled'          => 'boolean',
         ];
     }

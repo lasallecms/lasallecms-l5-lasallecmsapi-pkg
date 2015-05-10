@@ -61,4 +61,12 @@ class BaseModel extends Eloquent
     {
         return $this->allowed_user_groups;
     }
+
+    /*
+     * Get the array of TITLES not to be deleted for the model
+     */
+    public function getDoNotDelete()
+    {
+        return $this->do_not_delete;
+    }
 }
