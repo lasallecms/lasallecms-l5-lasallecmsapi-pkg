@@ -30,10 +30,33 @@ namespace Lasallecms\Lasallecmsapi\Repositories;
  *
  */
 
+// LaSalle Software
+use Lasallecms\Lasallecmsapi\Repositories\BaseRepository;
+use Lasallecms\Lasallecmsapi\Models\Tag;
 
-//class TagRepository extends BaseRepository
-class TagRepository
+// Laravel facades
+use Illuminate\Support\Facades\Auth;
+
+class TagRepository extends BaseRepository
 {
+    /*
+     * Instance of model
+     *
+     * @var Lasallecms\Lasallecmsapi\Models\Category
+     */
+    protected $model;
+
+
+    /*
+     * Inject the model
+     *
+     * @param  Lasallecms\Lasallecmsapi\Models\Category
+     */
+    public function __construct(Tag $model)
+    {
+        $this->model = $model;
+    }
+
     /*
      * Display all the tags in the admin listing
      *
@@ -53,9 +76,20 @@ class TagRepository
      */
     public function countAllPostsThatHaveTagId($id)
     {
-        $tag = $this->getFind($id);
+        $tag = $this->model->getFind($id);
         $tagsWithPosts = $tag->posts;
         return count($tagsWithPosts);
+    }
+
+    /*
+     * Return specific model
+     *
+     * @param id         Post ID
+     * @return eloquent
+     */
+    public function getFind($id)
+    {
+        return $this->model->findOrfail($id);
     }
 
 

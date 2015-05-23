@@ -35,7 +35,7 @@ use Lasallecms\Lasallecmsapi\Repositories\BaseRepository;
 use Lasallecms\Lasallecmsapi\Models\Category;
 
 // Laravel facades
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class CategoryRepository extends BaseRepository
 {
@@ -95,36 +95,38 @@ class CategoryRepository extends BaseRepository
     }
 
 
-    /*
-     * Create (INSERT)
-     *
-     * @param  array  $data
-     * @return bool
-     */
-    public function createCategory($data)
-    {
-        $category = new Category();
-
-        $category->title       = $data['title'];
-        $category->description = $data['description'];
-        $category->parent_id   = $data['parent_id'];
-        $category->created_by  = Auth::user()->id;
-        $category->updated_by  = Auth::user()->id;
-
-        return $category->save();
-    }
 
     /*
-     * UPDATE
+     * Find all the post records associated with a tag
      *
-     * @param  array  $data
-     * @return bool
+     * @param id  $id
+     * @return array
      */
-    public function updateCategory($data)
+    public function foreignKeyConstraintTest($id)
     {
-        $category = $this->getFind($data['id']);
-        $category->description = $data['description'];
-        $category->parent_id   = $data['parent_id'];
-        return $category->save();
+        // How many posts is this category associated with?
+        $results = DB::table('post_category')->where('category_id', '=', $id)->get();
+
+        if ( (count($results)) == 0 || (empty($results)) )
+        {
+            $post_category = 0;
+        } else {
+            $post_category = count($results);
+        }
+
+        // How many times is this category a parent category?
+        $results = DB::table('categories')->where('parent_id', '=', $id)->get();
+
+        if ( (count($results)) == 0 || (empty($results)) )
+        {
+            $parent_id = 0;
+        } else {
+            $parent_id  = count($results);
+        }
+
+        //return ['post_category' => $post_category, 'parent_id' => $parent_id];
+
+        if ( ($post_category > 0) || ($parent_id > 0)  ) return false;
+        return true;
     }
 }

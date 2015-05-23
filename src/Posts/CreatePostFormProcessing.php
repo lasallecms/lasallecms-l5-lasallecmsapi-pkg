@@ -30,99 +30,129 @@ namespace Lasallecms\Lasallecmsapi\Posts;
  *
  */
 
+
+///////////////////////////////////////////////////////////////////
+///            THIS IS A COMMAND HANDLER                        ///
+///////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////
+///  NOTE: THE REPOSITORY IS THE BASE REPOSITORY, NOT A         ///
+///  REPOSITORY SPECIFIC TO THE MODEL. THE REASON IS TO         ///
+///  FACILITATE AUTOMATION OF ADMIN FORMS. YOU CAN ALWAYS       ///
+///  DO A MODEL-SPECIFIC REPOSITORY IF NEED BE.                 ///
+///////////////////////////////////////////////////////////////////
+
+
 // LaSalle Software
-use Lasallecms\Lasallecmsapi\Repositories\PostRepository;
+use Lasallecms\Lasallecmsapi\Repositories\BaseRepository;
 use Lasallecms\Lasallecmsapi\FormProcessing\BaseFormProcessing;
 
 /*
- * Process a new post .
+ * Process a new record.
+ *
+ * FYI: BaseFormProcessing implements the FormProcessing interface.
  */
 class CreatePostFormProcessing extends BaseFormProcessing
 {
     /*
-     * Instance of repository
+     * Instance of the BASE repository
      *
-     * @var Lasallecms\Lasallecmsapi\Repositories\PostRepository
+     * @var Lasallecms\Lasallecmsapi\Repositories\BaseRepository
      */
     protected $repository;
+
+
+    ///////////////////////////////////////////////////////////////////
+    /// SPECIFY THE TYPE OF PERSIST THAT IS GOING ON HERE:          ///
+    ///  * "create"  for INSERT                                     ///
+    ///  * "update   for UPDATE                                     ///
+    ///  * "destroy" for DELETE                                     ///
+    ///////////////////////////////////////////////////////////////////
+    /*
+     * Type of persist
+     *
+     * @var string
+     */
+    protected $type = "create";
+
+    ///////////////////////////////////////////////////////////////////
+    /// SPECIFY THE FULL NAMESPACE AND CLASS NAME OF THE MODEL      ///
+    ///////////////////////////////////////////////////////////////////
+    /*
+     * Namespace and class name of the model
+     *
+     * @var string
+     */
+    protected $namespaceClassnameModel = "Lasallecms\Lasallecmsapi\Models\Post";
+
+
+
+
+    ///////////////////////////////////////////////////////////////////
+    ///   USUALLY THERE IS NOTHING ELSE TO MODIFY FROM HERE ON IN   ///
+    ///////////////////////////////////////////////////////////////////
+
 
     /*
      * Inject the model
      *
-     * @param Lasallecms\Lasallecmsapi\Repositories\PostRepository
+     * @param Lasallecms\Lasallecmsapi\Repositories\BaseRepository
      */
-    public function __construct(PostRepository $repository)
+    public function __construct(BaseRepository $repository)
     {
         $this->repository = $repository;
+
+        $this->repository->injectModelIntoRepository($this->namespaceClassnameModel);
     }
 
-    /*
-     * The processing steps.
-     *
-     * @param  The command bus object   $createPostCommand
-     * @return The custom response array
-     */
-    public function quarterback($createPostCommand)
-    {
-        // Get inputs into array
-        $data = (array) $createPostCommand;
 
-        // Foreign Key check --> not applicable
-        //$this->isForeignKeyOk($command);
+
+    /*
+     * The form processing steps.
+     *
+     * @param  object  $createCommand   The command bus object
+     * @return array                    The custom response array
+     */
+    public function quarterback($createCommand)
+    {
+        // Convert the command bus object into an array
+        $data = (array) $createCommand;
+
 
         // Sanitize
-        // THIS IS A FIRST PASS AT SANITIZING, BECAUSE A LOT MORE ACTION OCCURS IN persist()
-        $data = $this->sanitize($data, "create");
-
+        $data = $this->sanitize($data, $this->type);
 
 
         // Validate
-        if ($this->validate($data, "create") != "passed")
+        if ($this->validate($data, $this->type) != "passed")
         {
-            // Prepare the response array, and then return to the edit form with error messages
-            return $this->prepareResponseArray('validation_failed', 500, $data, $this->validate($data, "create"));
+            // Prepare the response array, and then return to the form with error messages
+            return $this->prepareResponseArray('validation_failed', 500, $data, $this->validate($data, $this->type));
         }
 
 
-        // Create
-        if (!$this->persist($data))
+        // Even though we already sanitized the data, we further "wash" the data
+        $data = $this->wash($data);
+
+
+        // INSERT record
+        if (!$this->persist($data, $this->type))
         {
-            // Prepare the response array, and then return to the edit form with error messages
+            // Prepare the response array, and then return to the form with error messages
             // Laravel's https://github.com/laravel/framework/blob/5.0/src/Illuminate/Database/Eloquent/Model.php
             //  does not prepare a MessageBag object, so we'll whip up an error message in the
             //  originating controller
             return $this->prepareResponseArray('persist_failed', 500, $data);
         }
 
-        // Unlock the record --> not applicable
-        //$this->unlock($data['id']);
 
-        // Prepare the response array, and then return to the command
+        // Prepare the response array, and then return to the controller
         return $this->prepareResponseArray('create_successful', 200, $data);
-    }
 
 
-    /*
-     * Any constraints to check due to foreign keys
-     *
-     * @param  array  $data
-     * @return bool
-     */
-    public function isForeignKeyOk($data){}
-
-
-    /*
-     * Persist --> save/create to the database
-     *
-     * @param  array  $data
-     * @return bool
-     */
-    public function persist($data)
-    {
-
-        // Extra step: prepare data for persist
-        $data = $this->repository->preparePostForPersist($data);
-
-        return $this->repository->createPost($data);
+        ///////////////////////////////////////////////////////////////////
+        ///     NO EVENTS ARE SPECIFIED IN THE BASE FORM PROCESSING     ///
+        ///////////////////////////////////////////////////////////////////
     }
 }

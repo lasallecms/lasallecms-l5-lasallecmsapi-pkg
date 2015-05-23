@@ -1,4 +1,5 @@
-<?php namespace Lasallecms\Lasallecmsapi\Categories;
+<?php
+namespace Lasallecms\Lasallecmsapi\Categories;
 
 /**
  *
@@ -29,69 +30,122 @@
  *
  */
 
-// Form Processing Interface
-use Lasallecms\Lasallecmsapi\Contracts\FormProcessing;
 
-// Form Processing Base Concrete Class
+///////////////////////////////////////////////////////////////////
+///            THIS IS A COMMAND HANDLER                        ///
+///////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////
+///  NOTE: THE REPOSITORY IS THE BASE REPOSITORY, NOT A         ///
+///  REPOSITORY SPECIFIC TO THE MODEL. THE REASON IS TO         ///
+///  FACILITATE AUTOMATION OF ADMIN FORMS. YOU CAN ALWAYS       ///
+///  DO A MODEL-SPECIFIC REPOSITORY IF NEED BE.                 ///
+///////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////
+//// CATEGORIES IS A LOOKUP TABLE, BUT ACCOMMODATING "PARENT ID"    ////
+//// REQUIRES BESPOKE VIEWS, AND A BESPOKE FOREIGN KEY CONSTRAINT   ////
+////////////////////////////////////////////////////////////////////////
+
+
+
+// LaSalle Software
+use Lasallecms\Lasallecmsapi\Repositories\BaseRepository;
 use Lasallecms\Lasallecmsapi\FormProcessing\BaseFormProcessing;
-
-// Category Repository Interface
-use Lasallecms\Lasallecmsapi\Contracts\CategoryRepository;
 
 
 /*
- * Process an update.
- * Go through the standard process (interface).
+ * Process an existing record.
+ *
+ * FYI: BaseFormProcessing implements the FormProcessing interface.
  */
-class UpdateCategoryFormProcessing extends BaseFormProcessing implements FormProcessing {
-
-
+class UpdateCategoryFormProcessing extends BaseFormProcessing
+{
     /*
      * Instance of repository
      *
-     * @var Lasallecms\Lasallecmsapi\Contracts\CategoryRepository
+     * @var Lasallecms\Lasallecmsapi\Repositories\BaseRepository
      */
     protected $repository;
+
+
+    ///////////////////////////////////////////////////////////////////
+    /// SPECIFY THE TYPE OF PERSIST THAT IS GOING ON HERE:          ///
+    ///  * "create"  for INSERT                                     ///
+    ///  * "update   for UPDATE                                     ///
+    ///  * "destroy" for DELETE                                     ///
+    ///////////////////////////////////////////////////////////////////
+    /*
+     * Type of persist
+     *
+     * @var string
+     */
+    protected $type = "update";
+
+    ///////////////////////////////////////////////////////////////////
+    /// SPECIFY THE FULL NAMESPACE AND CLASS NAME OF THE MODEL      ///
+    ///////////////////////////////////////////////////////////////////
+    /*
+     * Namespace and class name of the model
+     *
+     * @var string
+     */
+    protected $namespaceClassnameModel = "Lasallecms\Lasallecmsapi\Models\Category";
+
+
+
+    ///////////////////////////////////////////////////////////////////
+    ///   USUALLY THERE IS NOTHING ELSE TO MODIFY FROM HERE ON IN   ///
+    ///////////////////////////////////////////////////////////////////
+
 
     /*
      * Inject the model
      *
-     * @param  Lasallecms\Lasallecmsapi\Contracts\CategoryRepository
+     * @param Lasallecms\Lasallecmsapi\Repositories\BaseRepository
      */
-    public function __construct(CategoryRepository $repository) {
+    public function __construct(BaseRepository $repository)
+    {
         $this->repository = $repository;
+
+        $this->repository->injectModelIntoRepository($this->namespaceClassnameModel);
     }
 
     /*
-     * The processing steps.
+     * The form processing steps.
      *
-     * @param  The command bus object   $updateCategoryCommand
-     * @return The custom response array
+     * @param  object  $createCommand   The command bus object
+     * @return array                    The custom response array
      */
-    public function quarterback($updateCategoryCommand) {
+    public function quarterback($updateCommand)
+    {
+        // Convert the command bus object into an array
+        $data = (array) $updateCommand;
 
-        // Get inputs into array
-        $data = (array) $updateCategoryCommand;
-
-        // Foreign Key check --> not applicable
-        //$this->isForeignKeyOk($updateCategoryCommand);
 
         // Sanitize
-        $data = $this->sanitize($data, "update");
+        $data = $this->sanitize($data, $this->type);
+
 
         // Validate
-        if ($this->validate($data, "update") != "passed")
+        if ($this->validate($data, $this->type) != "passed")
         {
             // Unlock the record
             $this->unlock($data['id']);
 
             // Prepare the response array, and then return to the edit form with error messages
-            return $this->prepareResponseArray('validation_failed', 500, $data, $this->validate($data, "update"));
+            return $this->prepareResponseArray('validation_failed', 500, $data, $this->validate($data, $this->type));
         }
 
 
-        // Update
-        if (!$this->persist($data))
+        // Even though we already sanitized the data, we further "wash" the data
+        $data = $this->wash($data);
+
+
+        // UPDATE record
+        if (!$this->persist($data, $this->type))
         {
             // Unlock the record
             $this->unlock($data['id']);
@@ -103,32 +157,18 @@ class UpdateCategoryFormProcessing extends BaseFormProcessing implements FormPro
             return $this->prepareResponseArray('persist_failed', 500, $data);
         }
 
+
         // Unlock the record
         $this->unlock($data['id']);
+
 
         // Prepare the response array, and then return to the command
         return $this->prepareResponseArray('update_successful', 200, $data);
 
+
+        ///////////////////////////////////////////////////////////////////
+        ///     NO EVENTS ARE SPECIFIED IN THE BASE FORM PROCESSING     ///
+        ///////////////////////////////////////////////////////////////////
+
     }
-
-
-    /*
-     * Any constraints to check due to foreign keys
-     *
-     * @param  array  $data
-     * @return bool
-     */
-    public function isForeignKeyOk($data){}
-
-    /*
-     * Persist --> save/update to the database
-     *
-     * @param  array  $data
-     * @return bool
-     */
-    public function persist($data){
-        return $this->repository->updateCategory($data);
-    }
-
-
 }

@@ -1,4 +1,5 @@
-<?php namespace Lasallecms\Lasallecmsapi\Models;
+<?php
+namespace Lasallecms\Lasallecmsapi\Models;
 
 /**
  *
@@ -29,17 +30,124 @@
  *
  */
 
+
+// LaSalle Software
 use Lasallecms\Lasallecmsapi\Models\BaseModel;
 
-class Category extends BaseModel {
+class Category extends BaseModel
+{
+    ///////////////////////////////////////////////////////////////////
+    ///////////     MANDATORY USER DEFINED PROPERTIES      ////////////
+    ///////////              MODIFY THESE!                /////////////
+    ///////////////////////////////////////////////////////////////////
 
+
+    // LARAVEL MODEL CLASS PROPERTIES
+
+    /**
+     * The database table used by the model.
+     *
+     * The convention is plural -- and plural is assumed.
+     *
+     * Lowercase.
+     *
+     * @var string
+     */
+    public $table = "categories";
 
     /**
      * Which fields may be mass assigned
      * @var array
      */
-    protected $fillable = ['title', 'description', 'enabled'];
+    protected $fillable = [
+        'title', 'description', 'enabled'
+    ];
 
+
+    // PACKAGE PROPERTIES
+
+    /*
+     * Name of this package
+     *
+     * @var string
+     */
+    public $package_title = "LaSalleCMS";
+
+
+    // MODEL PROPERTIES
+
+    /*
+     * Model class namespace.
+     *
+     * Do *NOT* specify the model's class.
+     *
+     * @var string
+     */
+    public $model_namespace = "Lasallecms\Lasallecmsapi\Models";
+
+    /*
+     * Model's class.
+     *
+     * Convention is capitalized and singular -- which is assumed.
+     *
+     * @var string
+     */
+    public $model_class = "Category";
+
+
+    // RESOURCE ROUTE PROPERTIES
+
+    /*
+     * The base URL of the resource routes.
+     *
+     * Frequently is the same as the table name.
+     *
+     * By convention, plural.
+     *
+     * Lowercase.
+     *
+     * @var string
+     */
+    public $resource_route_name   = "categories";
+
+
+    // FORM PROCESSORS PROPERTIES.
+    // THESE ARE THE ADMIN CRUD COMMAND HANDLERS.
+    // THE ONLY REASON YOU HAVE TO CREATE THESE COMMAND HANDLERS AT ALL IS THAT
+    // THE EVENTS DIFFER. EVERYTHING THAT HAPPENS UP TO THE "PERSIST" IS PRETTY STANDARD.
+
+    /*
+     * Namespace of the Form Processors
+     *
+     * MUST *NOT* have a slash at the end of the string
+     *
+     * @var string
+     */
+    public $namespace_formprocessor = 'Lasallecms\Lasallecmsapi\Categories';
+
+    /*
+     * Class name of the CREATE Form Processor command
+     *
+     * @var string
+     */
+    public $classname_formprocessor_create = 'CreateCategoryFormProcessing';
+
+    /*
+     * Namespace and class name of the UPDATE Form Processor command
+     *
+     * @var string
+     */
+    public $classname_formprocessor_update = 'UpdateCategoryFormProcessing';
+
+    /*
+     * Namespace and class name of the DELETE (DESTROY) Form Processor command
+     *
+     * @var string
+     */
+    public $classname_formprocessor_delete = 'DeleteCategoryFormProcessing';
+
+
+    // SANITATION RULES PROPERTIES
 
     /**
      * Sanitation rules for Create (INSERT)
@@ -61,6 +169,8 @@ class Category extends BaseModel {
     ];
 
 
+    // VALIDATION RULES PROPERTIES
+
     /**
      * Validation rules for Create (INSERT)
      *
@@ -68,7 +178,7 @@ class Category extends BaseModel {
      */
     public $validationRulesForCreate = [
         'title'       => 'required|min:4|unique:tags',
-        'description' => 'required|min:4',
+        'description' => 'min:4',
     ];
 
     /**
@@ -77,9 +187,109 @@ class Category extends BaseModel {
      * @var array
      */
     public $validationRulesForUpdate = [
-        'description' => 'required|min:4',
+        'description' => 'min:4',
     ];
 
+
+    // USER GROUPS & ROLES PROPERTIES
+
+    /*
+     * User groups that are allowed to execute each controller action
+     *
+     * @var array
+     */
+    public $allowed_user_groups = [
+        ['index'   => ['Super Administrator']],
+        ['create'  => ['Super Administrator']],
+        ['store'   => ['Super Administrator']],
+        ['edit'    => ['Super Administrator']],
+        ['update'  => ['Super Administrator']],
+        ['destroy' => ['Super Administrator']],
+    ];
+
+
+    // FIELD LIST PROPERTIES
+
+    /*
+     * Field list
+     *
+     * ID and TITLE must go first.
+     *
+     * Forms will list fields in the order fields are listed in this array.
+     *
+     * @var array
+     */
+    public $field_list = [
+        [
+            'name'        => 'id',
+            'type'        => 'int',
+            'info'        => false,
+            'index_skip'  => false,
+            'index_align' => 'center',
+        ],
+        [
+            'name'        => 'parent_id',
+            'type'        => 'int',
+            'info'        => false,
+            'index_skip'  => false,
+            'index_align' => 'center',
+        ],
+        [
+            'name'         => 'title',
+            'type'         => 'varchar',
+            'info'         => 'Must be a unique name',
+            'index_skip'   => false,
+            'index_align'  => 'center',
+            'persist_wash' => 'title',
+        ],
+        [
+            'name'         => 'description',
+            'type'         => 'varchar',
+            'type'         => 'text-no-editor',
+            'info'         => 'Description is optional. 255 character maximum.',
+            'index_skip'   => false,
+        ],
+        [
+            'name'         => 'enabled',
+            'type'         => 'boolean',
+            'info'         => false,
+            'index_skip'   => false,
+            'index_align'  => 'center',
+            'persist_wash' => 'enabled',
+        ],
+    ];
+
+
+    // MISC PROPERTIES
+
+    /*
+     * Suppress the delete button when just one record to list, in the listings (index) page
+     *
+     * true  = suppress the delete button when just one record to list
+     * false = display the delete button when just one record to list
+     *
+     * @var bool
+     */
+    public $suppress_delete_button_when_one_record = false;
+
+    /*
+     * DO NOT DELETE THESE CORE RECORDS.
+     *
+     * Specify the TITLE of these records
+     *
+     * Assumed that this database table has a "title" field
+     *
+     * @var array
+     */
+    public $do_not_delete_these_core_records = [
+        'Blog'
+    ];
+
+
+
+    ///////////////////////////////////////////////////////////////////
+    //////////////        RELATIONSHIPS             ///////////////////
+    ///////////////////////////////////////////////////////////////////
 
     /*
      * Many categories per single post

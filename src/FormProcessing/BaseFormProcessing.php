@@ -46,10 +46,7 @@ class BaseFormProcessing implements FormProcessing
      * @param  mixed  $command
      * @return text
      */
-    public function quarterback($command)
-    {
-        parent::quarterback($command);
-    }
+    public function quarterback($command) {}
 
 
     /*
@@ -58,10 +55,7 @@ class BaseFormProcessing implements FormProcessing
      * @param  array  $data
      * @return bool
      */
-    public function isForeignKeyOk($data)
-    {
-        parent::isForeignKeyOk($data);
-    }
+    public function isForeignKeyOk($data) {}
 
 
     /*
@@ -105,14 +99,31 @@ class BaseFormProcessing implements FormProcessing
 
 
     /*
+     * Wash data even further.
+     *
+     * @param  array  $data
+     * @return array
+     */
+    public function wash($data)
+    {
+        return $this->repository->washDataForPersist($data);
+    }
+
+
+    /*
      * Persist --> save/update to the database
      *
      * @param  array  $data
+     * @param  text   $type   Create (INSERT), update (UPDATE), or destroy (DELETE)
      * @return bool
      */
-    public function persist($data)
+    public function persist($data, $type)
     {
-        parent::persist($data);
+        if (strtolower($type) == "create") return $this->repository->createRecord($data);
+
+        if (strtolower($type) == "update") return $this->repository->updateRecord($data);
+
+        if (strtolower($type) == "destroy") return $this->repository->destroyRecord($data);
     }
 
 

@@ -1,4 +1,5 @@
-<?php namespace Lasallecms\Lasallecmsapi\Users;
+<?php
+namespace Lasallecms\Lasallecmsapi\Users;
 
 /**
  *
@@ -29,22 +30,29 @@
  *
  */
 
-// Form Processing Interface
+
+///////////////////////////////////////////////////////////////////
+//// USER MANAGEMENT AND AUTHENTICATION IS SO BESPOKE THAT     ////
+//// IT IS NOT PART OF LASALLE's FORM AUTOMATION. HOWEVER,     ////
+//// THE FORM PROCESSING IS STILL BASED ON THE FORM PROCESSING ////
+//// INTERFACE, WHICH IS GREAT JUST FOR READABILITY, AND,      ////
+//// IT USES THE BASE PROCESSING METHODS UNLESS OVER-RIDDEN.   ////
+///////////////////////////////////////////////////////////////////
+
+
+
+// LaSalle Software
 use Lasallecms\Lasallecmsapi\Contracts\FormProcessing;
-
-// Form Processing Base Concrete Class
 use Lasallecms\Lasallecmsapi\FormProcessing\BaseFormProcessing;
-
-// Tag Repository Interface
-use Lasallecms\Lasallecmsapi\Contracts\UserRepository;
+use Lasallecms\Lasallecmsapi\Repositories\UserRepository;
 
 
 /*
  * Process a new tag .
  * Go through the standard process (interface).
  */
-class CreateUserFormProcessing extends BaseFormProcessing implements FormProcessing {
-
+class CreateUserFormProcessing extends BaseFormProcessing implements FormProcessing
+{
     /*
      * Instance of repository
      *
@@ -57,7 +65,8 @@ class CreateUserFormProcessing extends BaseFormProcessing implements FormProcess
      *
      * @param  Lasallecms\Lasallecmsapi\Contracts\UserRepository
      */
-    public function __construct(UserRepository $repository) {
+    public function __construct(UserRepository $repository)
+    {
         $this->repository = $repository;
     }
 
@@ -67,16 +76,15 @@ class CreateUserFormProcessing extends BaseFormProcessing implements FormProcess
      * @param  The command bus object   $createUserCommand
      * @return The custom response array
      */
-    public function quarterback($createUserCommand) {
-
+    public function quarterback($createUserCommand)
+    {
         // Get inputs into array
         $data = (array) $createUserCommand;
 
-        // Foreign Key check --> not applicable
-        //$this->isForeignKeyOk($data);
 
         // Sanitize
         $data = $this->sanitize($data, "create");
+
 
         // Validate
         if ($this->validate($data, "create") != "passed")
@@ -87,7 +95,8 @@ class CreateUserFormProcessing extends BaseFormProcessing implements FormProcess
 
 
         // Create
-        if (!$this->persist($data))
+        //if (!$this->persist($data))
+        if ( !$this->repository->createUser($data) )
         {
             // Prepare the response array, and then return to the edit form with error messages
             // Laravel's https://github.com/laravel/framework/blob/5.0/src/Illuminate/Database/Eloquent/Model.php
@@ -96,34 +105,7 @@ class CreateUserFormProcessing extends BaseFormProcessing implements FormProcess
             return $this->prepareResponseArray('persist_failed', 500, $data);
         }
 
-        // Unlock the record --> not applicable
-        //$this->unlock($data['id']);
-
         // Prepare the response array, and then return to the command
         return $this->prepareResponseArray('create_successful', 200, $data);
-
     }
-
-
-    /*
-     * Any constraints to check due to foreign keys
-     *
-     * @param  array  $data
-     * @return bool
-     */
-    public function isForeignKeyOk($data){}
-
-
-    /*
-     * Persist --> save/create to the database
-     *
-     * @param  array  $data
-     * @return bool
-     */
-    public function persist($data){
-        return $this->repository->createUser($data);
-    }
-
-
-
 }

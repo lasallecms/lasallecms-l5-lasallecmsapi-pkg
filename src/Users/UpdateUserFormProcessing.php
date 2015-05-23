@@ -1,4 +1,5 @@
-<?php namespace Lasallecms\Lasallecmsapi\Users;
+<?php
+namespace Lasallecms\Lasallecmsapi\Users;
 
 /**
  *
@@ -29,23 +30,32 @@
  *
  */
 
-// Form Processing Interface
+
+
+///////////////////////////////////////////////////////////////////
+//// USER MANAGEMENT AND AUTHENTICATION IS SO BESPOKE THAT     ////
+//// IT IS NOT PART OF LASALLE's FORM AUTOMATION. HOWEVER,     ////
+//// THE FORM PROCESSING IS STILL BASED ON THE FORM PROCESSING ////
+//// INTERFACE, WHICH IS GREAT JUST FOR READABILITY, AND,      ////
+//// IT USES THE BASE PROCESSING METHODS UNLESS OVER-RIDDEN.   ////
+///////////////////////////////////////////////////////////////////
+
+
+
+// LaSalle Software
 use Lasallecms\Lasallecmsapi\Contracts\FormProcessing;
-
-// Form Processing Base Concrete Class
 use Lasallecms\Lasallecmsapi\FormProcessing\BaseFormProcessing;
+use Lasallecms\Lasallecmsapi\Repositories\UserRepository;
 
-// Tag Repository Interface
-use Lasallecms\Lasallecmsapi\Contracts\UserRepository;
-
+// Laravel facades
+use Illuminate\Support\Facades\Validator;
 
 /*
  * Process an update.
  * Go through the standard process (interface).
  */
-class UpdateUserFormProcessing extends BaseFormProcessing implements FormProcessing {
-
-
+class UpdateUserFormProcessing extends BaseFormProcessing implements FormProcessing
+{
     /*
      * Instance of repository
      *
@@ -58,7 +68,8 @@ class UpdateUserFormProcessing extends BaseFormProcessing implements FormProcess
      *
      * @param  Lasallecms\Lasallecmsapi\Contracts\UserRepository
      */
-    public function __construct(UserRepository $repository) {
+    public function __construct(UserRepository $repository)
+    {
         $this->repository = $repository;
     }
 
@@ -68,18 +79,17 @@ class UpdateUserFormProcessing extends BaseFormProcessing implements FormProcess
      * @param  The command bus object   $updateUserCommand
      * @return The custom response array
      */
-    public function quarterback($updateUserCommand) {
-
+    public function quarterback($updateUserCommand)
+    {
         // Get inputs into array
         $data = (array) $updateUserCommand;
 
-        // Foreign Key check --> not applicable
-        //$this->isForeignKeyOk($data);
 
         // Sanitize
         $data = $this->sanitize($data, "update");
 
-        // Validate
+
+        // Validate (note the override validate method below)
         if ($this->validate($data, "update") != "passed")
         {
             // Unlock the record
@@ -91,7 +101,8 @@ class UpdateUserFormProcessing extends BaseFormProcessing implements FormProcess
 
 
         // Update
-        if (!$this->persist($data))
+        //if (!$this->persist($data))
+        if ( !$this->repository->updateUser($data) )
         {
             // Unlock the record
             $this->unlock($data['id']);
@@ -103,32 +114,40 @@ class UpdateUserFormProcessing extends BaseFormProcessing implements FormProcess
             return $this->prepareResponseArray('persist_failed', 500, $data);
         }
 
+
         // Unlock the record
         $this->unlock($data['id']);
 
+
         // Prepare the response array, and then return to the command
         return $this->prepareResponseArray('update_successful', 200, $data);
-
     }
 
 
     /*
-     * Any constraints to check due to foreign keys
+     * Over-riding the base validate method because there is one set of validation rules for "there is a password",
+     * (ie, user is changing their password); and, another set of validation rules for "there is NO password"
+     * (ie, user not changing the password)
      *
      * @param  array  $data
+     * @param  text   $type   Are we validating a create or update? ==> WHICH IS NOT USED IN THIS CUSTOM VALIDATE METHOD
      * @return bool
      */
-    public function isForeignKeyOk($data){}
+    public function validate($data, $type)
+    {
+        // If there is a password, get the validation rules for "there is a password)
+        if ($data['password'])
+        {
+            $rules = $this->repository->getValidationRulesForUpdateWithPassword();
 
-    /*
-     * Persist --> save/update to the database
-     *
-     * @param  array  $data
-     * @return bool
-     */
-    public function persist($data){
-        return $this->repository->updateUser($data);
+        } else {
+            $rules = $this->repository->getValidationRulesForUpdateNoPassword();
+        }
+
+        $validator = Validator::make($data,$rules);
+
+        if ($validator->fails()) return $validator->messages();
+
+        return "passed";
     }
-
-
 }

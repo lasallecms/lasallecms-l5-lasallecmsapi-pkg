@@ -1,4 +1,5 @@
-<?php namespace Lasallecms\Lasallecmsapi\Categories;
+<?php
+namespace Lasallecms\Lasallecmsapi\Categories;
 
 /**
  *
@@ -29,111 +30,108 @@
  *
  */
 
-// Form Processing Interface
-use Lasallecms\Lasallecmsapi\Contracts\FormProcessing;
 
-// Form Processing Base Concrete Class
+
+///////////////////////////////////////////////////////////////////
+///            THIS IS A COMMAND HANDLER                        ///
+///////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////
+//// CATEGORIES IS A LOOKUP TABLE, BUT ACCOMMODATING "PARENT ID"    ////
+//// REQUIRES BESPOKE VIEWS, AND A BESPOKE FOREIGN KEY CONSTRAINT   ////
+////////////////////////////////////////////////////////////////////////
+
+
+// LaSalle Software
+use Lasallecms\Lasallecmsapi\Repositories\CategoryRepository;
 use Lasallecms\Lasallecmsapi\FormProcessing\BaseFormProcessing;
-
-// Tag Repository Interface
-use Lasallecms\Lasallecmsapi\Contracts\CategoryRepository;
-
 
 /*
  * Process a deletion.
- * Go through the standard process (interface).
+ *
+ * FYI: BaseFormProcessing implements the FormProcessing interface.
  */
-class DeleteCategoryFormProcessing extends BaseFormProcessing implements FormProcessing {
-
+class DeleteCategoryFormProcessing extends BaseFormProcessing
+{
     /*
      * Instance of repository
      *
-     * @var Lasallecms\Lasallecmsapi\Contracts\CategoryRepository
+     * @var Lasallecms\Lasallecmsapi\Repositories\BaseRepository
      */
     protected $repository;
+
+
+    ///////////////////////////////////////////////////////////////////
+    /// SPECIFY THE TYPE OF PERSIST THAT IS GOING ON HERE:          ///
+    ///  * "create"  for INSERT                                     ///
+    ///  * "update   for UPDATE                                     ///
+    ///  * "destroy" for DELETE                                     ///
+    ///////////////////////////////////////////////////////////////////
+    /*
+     * Type of persist
+     *
+     * @var string
+     */
+    protected $type = "destroy";
+
+    ///////////////////////////////////////////////////////////////////
+    /// SPECIFY THE FULL NAMESPACE AND CLASS NAME OF THE MODEL      ///
+    ///////////////////////////////////////////////////////////////////
+    /*
+     * Namespace and class name of the model
+     *
+     * @var string
+     */
+    protected $namespaceClassnameModel = "Lasallecms\Lasallecmsapi\Models\Category";
+
+
+    ///////////////////////////////////////////////////////////////////
+    ///   USUALLY THERE IS NOTHING ELSE TO MODIFY FROM HERE ON IN   ///
+    ///////////////////////////////////////////////////////////////////
+
 
     /*
      * Inject the model
      *
-     * @param  Lasallecms\Lasallecmsapi\Contracts\CategoryRepository
+     * @param  Lasallecms\Lasallecmsapi\Repositories\BaseRepository
      */
-    public function __construct(CategoryRepository $repository) {
+    public function __construct(CategoryRepository $repository)
+    {
         $this->repository = $repository;
+
+        //$this->repository->injectModelIntoRepository($this->namespaceClassnameModel);
     }
+
 
     /*
      * The processing steps.
      *
-     * @param  The command bus object   $deleteTagCommand
+     * @param  The command bus object   $deletePostCommand
      * @return The custom response array
      */
-    public function quarterback($deleteCategoryCommand) {
-
-        // Get inputs into array
-        $data = (array) $deleteCategoryCommand;
-
+    public function quarterback($id)
+    {
         // Foreign Key check
-        if (!$this->isForeignKeyOk($data))
+        // foreignKeyConstraintTest() returns "true" or "false"
+        if (!$this->repository->foreignKeyConstraintTest($id))
         {
             // Prepare the response array, and then return to the index with error messages
-            return $this->prepareResponseArray('foreign_key_check_failed', 500, $data);
+            return $this->prepareResponseArray("foreign_key_check_failed", 500, $id);
         }
 
-        // Sanitize -> not applicable
-        //$data = $this->sanitize($data);
-
-        // Validate -> not applicable
-        /*
-        if ($this->validate($data, "type") != "passed")
-        {
-            // Prepare the response array, and then return to the edit form with error messages
-            return $this->prepareResponseArray('validation_failed', 500, $data, $this->validate($data, "type"));
-        }
-        */
-
-
-        // Delete!
-        if (!$this->persist($data))
+        // DELETE record
+        //if (!$this->persist($id, $this->type))
+        if (!$this->repository->getDestroy($id))
         {
             // Prepare the response array, and then return to the edit form with error messages
             // Laravel's https://github.com/laravel/framework/blob/5.0/src/Illuminate/Database/Eloquent/Model.php
             //  does not prepare a MessageBag object, so we'll whip up an error message in the
             //  originating controller
-            return $this->prepareResponseArray('persist_failed', 500, $data);
+            return $this->prepareResponseArray('persist_failed', 500, $id);
         }
 
-        // Unlock the record --> not applicable
-        //$this->unlock($data['id']);
-
         // Prepare the response array, and then return to the command
-        return $this->prepareResponseArray('create_successful', 200, $data);
-
+        return $this->prepareResponseArray('create_successful', 200, $id);
     }
-
-
-    /*
-     * Any constraints to check due to foreign keys
-     *
-     * @param  array  $data
-     * @return bool
-     */
-    public function isForeignKeyOk($data){
-        $count = $this->repository->countAllPostsThatHaveCategoryId($data['id']->id);
-
-        if ($count > 0) return false;
-        return true;
-    }
-
-
-    /*
-     * Persist --> save/create to the database
-     *
-     * @param  array  $data
-     * @return bool
-     */
-    public function persist($data){
-        return $this->repository->getDestroy($data['id']->id);
-    }
-
-
 }

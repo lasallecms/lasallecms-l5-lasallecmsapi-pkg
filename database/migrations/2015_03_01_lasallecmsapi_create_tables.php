@@ -116,7 +116,7 @@ class CreateTables extends Migration {
                 $table->text('canonical_url');
                 $table->string('featured_image');
 
-                $table->boolean('enabled')->defalookup_address_typeult(true);
+                $table->boolean('enabled')->default(true);
 
                 $table->date('publish_on');
 

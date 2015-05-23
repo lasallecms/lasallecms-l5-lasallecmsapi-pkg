@@ -49,24 +49,5 @@ class BaseModel extends Eloquent
         parent::boot();
     }
 
-
-    ///////////////////////////////////////////////////////////////////
-    ////////////////////         GETTERS          /////////////////////
-    ///////////////////////////////////////////////////////////////////
-
-    /*
-     * Get the array of allowed user roles for the model
-     */
-    public function getAllowedUserGroups()
-    {
-        return $this->allowed_user_groups;
-    }
-
-    /*
-     * Get the array of TITLES not to be deleted for the model
-     */
-    public function getDoNotDelete()
-    {
-        return $this->do_not_delete;
-    }
+    //public function getdDo_not_delete_these_core_records
 }

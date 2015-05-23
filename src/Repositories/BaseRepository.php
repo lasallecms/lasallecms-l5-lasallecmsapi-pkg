@@ -76,6 +76,7 @@ class BaseRepository
     }
 
 
+
     ///////////////////////////////////////////////////////////////////
     //////////////////////    MODEL INJECTION     /////////////////////
     ///////////////////////////////////////////////////////////////////
@@ -89,6 +90,8 @@ class BaseRepository
      * Called from controller
      *
      * @param  string   $modelNamespaceClass  The model's concatenated namespace and class name
+     *
+     * @return object
      */
     public function injectModelIntoRepository($modelNamespaceClass)
     {
@@ -138,6 +141,7 @@ class BaseRepository
      * Store model
      *
      * @param  data     Input data
+     *
      * @return eloquent
      */
     public function getStore($data)
@@ -194,6 +198,17 @@ class BaseRepository
     }
 
 
+    /*
+     * Display all the records ordered by publish_on, title, DESC
+     *
+     * @return collection
+     */
+    public function allRecordOrderbyPublishonTitleDesc()
+    {
+        return $this->model->orderBy('publish_on', 'title', 'DESC')->get();
+    }
+
+
     ///////////////////////////////////////////////////////////////////
     ////////////////////      USER GROUPS         /////////////////////
     ///////////////////////////////////////////////////////////////////
@@ -245,7 +260,7 @@ class BaseRepository
      */
     public function allowedGroupsForThisActionByModel($action)
     {
-        $allowedUserGroupsForAllActions = $this->model->getAllowedUserGroups();
+        $allowedUserGroupsForAllActions = $this->model->allowed_user_groups;
 
         //http://laravel.com/docs/4.2/helpers#arrays
         return array_flatten( array_fetch($allowedUserGroupsForAllActions, $action) );
@@ -391,15 +406,17 @@ class BaseRepository
     ///////////////////////////////////////////////////////////////////
 
     /*
-     * Is this record not supposed to be deleted?
+     * Is this record *NOT* supposed to be deleted?
      *
      * @param   int  $id  Lookup Table ID
      * @return  bool
      */
     public function doNotDelete($id)
     {
-        $table             = $this->model->getTable();
-        $titlesDoNotDelete = $this->model->getDoNotDelete();
+        if (empty($this->model->do_not_delete_these_core_records)) return false;
+
+        $table             = $this->model->table;
+        $titlesDoNotDelete = $this->model->do_not_delete_these_core_records;
         $titleToBeDeleted  = DB::table($table)->where('id', '=', $id)->pluck('title');
 
         if (in_array($titleToBeDeleted, $titlesDoNotDelete)) return true;
@@ -553,6 +570,95 @@ class BaseRepository
     ///////////////////////////////////////////////////////////////////
 
     /*
+     * Prepare input data for save
+     *
+     * Basically ignoring the sanitizing that has already been applied, in the interests
+     * of being thorough
+     *
+     * @param  array   $data  The sanitized input data array
+     * @return array
+     */
+    public function washDataForPersist($data)
+    {
+        $fields = $data['field_list'];
+
+        foreach ($fields as $field)
+        {
+            // If the "persist_wash" element is empty, then give it a value so the IF statements in this method work
+            if ( empty($field['persist_wash']) ) $field['persist_wash'] = "empty";
+
+            if (($field['name'] == "title") || ($field['persist_wash'] == "title"))
+            {
+                $data[$field['name']] = $this->prepareTitleForPersist($data[$field['name']]);
+            }
+
+            if ( $field['name'] == "slug" )
+            {
+                $data['slug'] = $this->prepareSlugForPersist($data['title'], $data['slug']);
+            }
+
+            if ( $field['name'] == "canonical_url" )
+            {
+                $data['canonical_url'] = $this->prepareCanonicalURLForPersist($data['$slug']);
+            }
+
+            if (( $field['name'] == "content") || ($field['persist_wash'] == "content"))
+            {
+                $data[$field['name']] = $this->prepareContentForPersist($data[$field['name']]);
+            }
+
+            if (($field['name'] == "description") || ($field['persist_wash'] == "description"))
+            {
+                $data[$field['name']] = $this->prepareDescriptionForPersist($data[$field['name']]);
+            }
+
+            if ( $field['name'] == "excerpt" )
+            {
+                $data['excerpt'] = $this->prepareExcerptForPersist($data['excerpt'], $data['content']);
+            }
+
+            if ($field['name'] == "meta_description")
+            {
+                $data['meta_description'] = $this->prepareMetaDescriptionForPersist($data['meta_description'], $data['excerpt']);
+            }
+
+            if ( $field['name'] == "featured_image" )
+            {
+                $data['featured_image'] = $this->prepareFeaturedImageForPersist($data['featured_image']);
+            }
+
+            if (($field['name'] == "enabled") || ($field['persist_wash'] == "enabled"))
+            {
+                $data[$field['name']] = $this->prepareEnabledForPersist($data[$field['name']]);
+            }
+
+            if (($field['name'] == "publish_on") || ($field['persist_wash'] == "publish_on"))
+            {
+                $data[$field['name']] = $this->preparePublishOnForPersist($data[$field['name']]);
+            }
+
+            if (($field['name'] == "email") || ($field['persist_wash'] == "email"))
+            {
+                $data[$field['name']] = $this->prepareEmailForPersist($data[$field['name']]);
+            }
+        }
+
+        if ($data['crud_action'] == "create")
+        {
+            $data['created_at'] = Carbon::now();
+            $data['created_by'] = Auth::user()->id;
+
+            $data['updated_at'] = Carbon::now();
+            $data['updated_by'] = Auth::user()->id;
+
+        } else {
+            //blank
+        }
+
+        return $data;
+    }
+
+    /*
      * Transform title for persist.
      *
      * @param  text  $title
@@ -579,8 +685,7 @@ class BaseRepository
     /*
      * Transform description for persist.
      *
-     * @param  text  $meta_description
-     * @param  text  $excerpt
+     * @param  string  $descriptions
      * @return text
      */
     public function prepareDescriptionForPersist($description)
@@ -615,7 +720,7 @@ class BaseRepository
             $slug = preg_replace('!['.preg_quote($flip).']+!u', $separator, $title);
 
             // Remove all characters that are not the separator, letters, numbers, or whitespace.
-            $slug = preg_replace('![^'.preg_quote($separator).'\pL\pN\s]+!u', '', mb_strtolower($slug));
+       return $this->model->orderBy('publish_on', 'title', 'DESC')->get();     $slug = preg_replace('![^'.preg_quote($separator).'\pL\pN\s]+!u', '', mb_strtolower($slug));
 
             // Replace all separator characters and whitespace by a single separator
             $slug = preg_replace('!['.preg_quote($separator).'\s]+!u', $separator, $slug);
@@ -662,9 +767,6 @@ class BaseRepository
         if ($rowCount > 0) return $rowCount;
         return 0;
     }
-
-
-
 
     /*
      * Transform canonical_url for persist.
@@ -799,12 +901,390 @@ class BaseRepository
     }
 
     /*
-     * Return a new instance of the model.
-     * For CREATE
+     * Transform emailn for persist.
+     *
+     * @param  string   $email
+     * @return email
      */
+    public function prepareEmailForPersist($email)
+    {
+        // leaving this code here for reference only
+
+        // http://stackoverflow.com/questions/7290674/php-is-filter-sanitize-email-pointless
+
+        /*
+        $clean_email = filter_var($email,FILTER_SANITIZE_EMAIL);
+
+        if ($email == $clean_email && filter_var($email,FILTER_VALIDATE_EMAIL))
+        {
+            // blank on purpose
+        }
+        */
+
+        return $email;
+    }
+
+
+
+
+
+    ///////////////////////////////////////////////////////////////////
+    ////////////         PERSIST: CREATE/INSERT           /////////////
+    ///////////////////////////////////////////////////////////////////
+
+    /*
+         * Create (INSERT) Record
+         *
+         * @param  array  $data
+         * @return bool
+         */
+    public function createRecord($data)
+    {
+        $modelInstance = new $this->model;
+
+        $field_list = $data['field_list'];
+        foreach ($field_list as $field)
+        {
+            // Ignore primary ID field for INSERT as created during said INSERT
+            if ($field['name'] == "id") continue;
+
+            // Special handling for password fields
+            if ($field['type'] == "password")
+            {
+                $modelInstance->$field['name'] = bcrypt($data[$field['name']]);
+                continue;
+            }
+
+            // Related tables with pivot tables; that is, with one-to-many or many-to-many relationships
+            // have their own save routine, since the relationships are stored in a separate database table
+            // Note: empty 'related_pivot_table' in the field list produces exception error. Only 'related_table"
+            //       type has this 'related_pivot_table' array element
+            if ( !empty($field['related_pivot_table']))
+            {
+                if (($field['type'] == "related_table") && ($field['related_pivot_table'] == "true"))  continue;
+            }
+
+            $modelInstance->$field['name'] = $data[$field['name']];
+        }
+
+        // Assign data to the standard database fields
+        $modelInstance->created_at       = $data['created_at'] = Carbon::now();
+        $modelInstance->created_by       = $data['created_by'] = Auth::user()->id;
+
+        $modelInstance->updated_at       = $data['updated_at'] = Carbon::now();
+        $modelInstance->updated_by       = $data['updated_by'] = Auth::user()->id;
+
+        // INSERT!
+        $saveWentOk = $modelInstance->save();
+
+        // If the save to the database table went ok, then let's INSERT related IDs into the pivot tables,
+        if ($saveWentOk)
+        {
+
+            // Iterate through the field list to identify possible table relationships that use pivot database tables
+            foreach ($field_list as $field)
+            {
+                if (($field['type'] == "related_table") && ($field['related_pivot_table']))
+                {
+                    // INSERT into the pivot table
+                    $this->associateRelatedRecordsToNewRecord(
+                        $modelInstance,
+                        $data[$field['name']],
+                        $field['related_namespace'],
+                        $field['related_model_class']
+                    );
+                }
+            }
+            return true;
+        }
+
+        return false;
+    }
+
+
+    /*
+    * Associate each related record with the record just created
+    *
+    * @param  object    $modelInstance       object just created
+    * @param  array     $associatedRecords   array of id's associated with the record just created
+    * @param  string    $relatedNamespace    Namespace of the associated model
+    * @param  string    $relatedModelClass   Class of the associated model
+    * @return void
+    */
+    public function associateRelatedRecordsToNewRecord($modelInstance, $associatedRecords, $relatedNamespace, $relatedModelClass)
+    {
+        // Check if there are any records to insert into the pivot table
+        if (count($associatedRecords) > 0)
+        {
+            // What is the namespace.class of the related table?
+            $namespaceModelclass = $relatedNamespace . "\\". $relatedModelClass;
+
+            // We need the repository of the related table (model?!). That repository is... well, it is
+            // this repository class: the base repository class! We need a new instance with the related model.
+            // So, create the new base repository instance...
+            $relatedRepository = new BaseRepository();
+
+            /// ... and inject the related model class into it
+            $relatedRepository->injectModelIntoRepository($namespaceModelclass);
+
+
+            // For the purpose of saving to the pivot table, we need the method name of the related model as
+            // it is in the model. As the method would be capitalized, let's un-capitalize it
+            $relatedMethod = strtolower($relatedModelClass);
+
+            // for each record that needs to be INSERTed into the pivot table
+            foreach ($associatedRecords as $associatedRecordId)
+            {
+                // get the record in the related table, so we can use the info to save to the pivot table
+                $associatedRecord = $relatedRepository->getFind($associatedRecordId);
+
+                // save to the pivot table
+                $modelInstance->$relatedMethod()->save($associatedRecord);
+            }
+        }
+    }
+
+
+
+    ///////////////////////////////////////////////////////////////////
+    ////////////            PERSIST: UPDATE               /////////////
+    ///////////////////////////////////////////////////////////////////
+
+    /*
+     * UPDATE
+     *
+     * @param  array  $data
+     * @return bool
+     */
+    public function updateRecord($data)
+    {
+        $modelInstance = $this->getFind($data['id']);
+
+        $field_list = $data['field_list'];
+        foreach ($field_list as $field)
+        {
+            // Special handling for password fields
+            if ($field['type'] == "password")
+            {
+                $modelInstance->$field['name'] = bcrypt($data[$field['name']]);
+                continue;
+            }
+
+
+            // Related tables with pivot tables; that is, with one-to-many or many-to-many relationships
+            // have their own save routine, since the relationships are stored in a separate database table
+            // Note: empty 'related_pivot_table' in the field list produces exception error. Only 'related_table"
+            //       type has this 'related_pivot_table' array element
+            if ( !empty($field['related_pivot_table']))
+            {
+                if (($field['type'] == "related_table") && ($field['related_pivot_table'] == "true"))  continue;
+            }
+
+            $modelInstance->$field['name'] = $data[$field['name']];
+        }
+
+        // Assign data to the standard database fields
+        $modelInstance->updated_at       = $data['updated_at'] = Carbon::now();
+        $modelInstance->updated_by       = $data['updated_by'] = Auth::user()->id;
+
+        $saveWentOk = $modelInstance->save();
+
+        // If the save to the database table went ok, then let's UPDATE/INSERT related IDs into the pivot tables,
+        if ($saveWentOk)
+        {
+            // Iterate through the field list to identify possible table relationships that use pivot database tables
+            foreach ($field_list as $field)
+            {
+                if (($field['type'] == "related_table") && ($field['related_pivot_table']))
+                {
+                    // INSERT into the pivot table
+                    $this->associateRelatedRecordsToUpdatedRecord(
+                        $modelInstance,
+                        $data[$field['name']],
+                        $field['related_model_class']
+                    );
+                }
+            }
+            return true;
+        }
+
+        return false;
+    }
+
+
+    /*
+    * Associate each related record with the record just updated.
+    *
+    * @param  object    $modelInstance       object just updated
+    * @param  array     $associatedRecords   array of id's associated with the record just updated
+    * @param  string    $relatedNamespace    Namespace of the associated model
+    * @param  string    $relatedModelClass   Class of the associated model
+    * @return void
+    */
+    public function associateRelatedRecordsToUpdatedRecord($modelInstance, $associatedRecords, $relatedModelClass)
+    {
+        // Check if there are any records to sync with the pivot table
+        if (count($associatedRecords) > 0)
+        {
+            // There's probably a function for this, but for now:
+            //  (i)  create an array of the related IDs
+            //  (ii) detach the existing tag IDs and attach the new tag IDs, by using SYNC
+
+            //  (i)  create an array of the related IDs
+            $newIds = array();
+            foreach ($associatedRecords as $associatedId)
+            {
+                $newIds[] = $associatedId;
+            }
+
+            // For the purpose of saving to the pivot table, we need the method name of the related model as
+            // it is in the model. As the method would be capitalized, let's un-capitalize it
+            $relatedMethod = strtolower($relatedModelClass);
+
+            // (ii) detach the existing tag IDs and attach the new tag IDs, by using SYNC
+            $modelInstance->$relatedMethod()->sync($newIds);
+        }
+    }
+
+
+    ///////////////////////////////////////////////////////////////////
+    ////////////            PERSIST: DELETE               /////////////
+    ///////////////////////////////////////////////////////////////////
+
+    /*
+     * DELETE
+     *
+     * @param  int  $id
+     * @return bool
+     */
+    public function destroyRecord($id)
+    {
+        return $this->getDestroy($id);
+    }
+
+
+
+    ///////////////////////////////////////////////////////////////////
+    ////////////         HTML DROPDOWNS METHODS           /////////////
+    ///////////////////////////////////////////////////////////////////
+
+    /*
+     * Construct a dropdown with multiple selects from the related table.
+     *
+     * YES, THIS WOULD NORMALLY BE IN MY HELPERS PACKAGE, BUT THE "EDIT" VERSION BELOW
+     * NEEDS THE REPOSITORY. I WANT TO KEEP THE "CREATE" AND "EDIT" METHODS TOGETHER
+     *
+     * @param  stromg   $relatedTableName   Name of the related table
+     * @return string
+     */
+    public function multipleSelectFromRelatedTableCreate($relatedTableName)
+    {
+        // Get the records
+        $records =  DB::table($relatedTableName)->where('enabled', '=', 1)->get();
+
+        // Initiatize the html select tag
+        $html = "";
+        $html .= '<select name="'.$relatedTableName.'[]" id="'.$relatedTableName.'" size="6" class="form-control" multiple>';
+
+        // Construct the <option></option> tags for ALL tags in the tags table
+        foreach ($records as $record)
+        {
+            $html .= '<option ';
+            $html .= 'value="';
+            $html .= $record->id;
+            $html .= '">';
+            $html .= $record->title;
+            $html .= '</option>"';
+        }
+        $html .= '</select>';
+
+        return $html;
+    }
+
+    /*
+     * Construct a dropdown with multiple selects from the related table,
+     * highlighting what is already selected.
+     *
+     * YES, THIS WOULD NORMALLY BE IN MY HELPERS PACKAGE, BUT THE "CREATE" VERSION ABOVE
+     * NEEDS THE REPOSITORY. I WANT TO KEEP THE "CREATE" AND "EDIT" METHODS TOGETHER
+     *
+     * @param  stromg  $tableName   Name of the related table
+     * @return string
+     */
+    public function multipleSelectFromRelatedTableEdit($relatedTableName, $relatedModelClass, $id)
+    {
+        // Get the related records
+        $relatedTableRecords = DB::table($relatedTableName)->where('enabled', '=', 1)->get();
+
+        // Create an array of tag IDs that are currently attached to the post
+        $relatedTableRecordsAssociatedWithThisParentId = [];
+
+        // Find the related records for the parent
+        $allRelatedTableRecordsByParentId = $this->getLookupTableRecordsAssociatedByParentId($relatedModelClass, $id, "title");
+        foreach ($allRelatedTableRecordsByParentId as $relatedTableRecordByParentId)
+        {
+            $relatedTableRecordsAssociatedWithThisParentId[] = $relatedTableRecordByParentId->id;
+        }
+
+        // Initiatize the html select tag
+        $html = "";
+        $html .= '<select name="'.$relatedTableName.'[]" id="'.$relatedTableName.'" size="6" class="form-control" multiple>';
+
+        // Construct the <option></option> tags for ALL tags in the tags table
+        foreach ($relatedTableRecords as $relatedTableRecord)
+        {
+            // If this tag is attached to the post, then SELECTED it
+            if ( in_array($relatedTableRecord->id, $relatedTableRecordsAssociatedWithThisParentId) )
+            {
+                $selected = ' selected="selected" ';
+            } else {
+                $selected = "";
+            }
+
+            $html .= '<option ';
+            $html .= $selected;
+            $html .= 'value="';
+            $html .= $relatedTableRecord->id;
+            $html .= '">';
+            $html .= $relatedTableRecord->title;
+            $html .= '</option>"';
+        }
+        $html .= '</select>';
+
+        return $html;
+    }
+
+
+
+    ///////////////////////////////////////////////////////////////////
+    ////////////            MISC METHODS              /////////////////
+    ///////////////////////////////////////////////////////////////////
+
+    /*
+     * What (lookup) table records are associated with another record resident in another table?
+     *
+     * Index blade files displaying listings of records use this method. Usually, with Eloquent, we
+     * inject the models, and then use a statement such as "$this->model->find($id)->category->sortBy($sortBy);"
+     *
+     * @param   string      $relatedModelName    Name of Model that is related to the table
+     * @param   int         $id                  ID of the record associated wtih $relatedModelName
+     * @param   sortBy      $sortBy              Sort by this column in ASC order
+     * @return  collection
+     */
+    public function getLookupTableRecordsAssociatedByParentId($relatedModelName, $id, $sortBy = "title")
+    {
+        return $this->model->find($id)->$relatedModelName->sortBy($sortBy);
+    }
+
+
+    /*
+    * Return a new instance of the model.
+    * For CREATE
+    *
+    * @return object
+    */
     public function newModelInstance()
     {
         return new $this->model;
     }
-
 }

@@ -69,12 +69,21 @@ interface FormProcessing
     public function validate($data, $type);
 
     /*
-     * Persist --> save/update to the database
+     * Wash data even further.
      *
      * @param  array  $data
+     * @return array
+     */
+    public function wash($data);
+
+    /*
+     * Persist
+     *
+     * @param  array  $data
+     * @param  text   $type   Create (INSERT), update (UPDATE), or destroy (DELETE)
      * @return bool
      */
-    public function persist($data);
+    public function persist($data, $type);
 
     /*
      * Unlock the record.

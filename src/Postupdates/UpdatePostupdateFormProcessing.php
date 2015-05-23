@@ -1,4 +1,5 @@
-<?php namespace Lasallecms\Lasallecmsapi\Postupdates;
+<?php
+namespace Lasallecms\Lasallecmsapi\Postupdates;
 
 /**
  *
@@ -29,73 +30,113 @@
  *
  */
 
-// Form Processing Interface
-use Lasallecms\Lasallecmsapi\Contracts\FormProcessing;
+///////////////////////////////////////////////////////////////////
+///            THIS IS A COMMAND HANDLER                        ///
+///////////////////////////////////////////////////////////////////
 
-// Form Processing Base Concrete Class
+
+///////////////////////////////////////////////////////////////////
+///  NOTE: THE REPOSITORY IS THE BASE REPOSITORY, NOT A         ///
+///  REPOSITORY SPECIFIC TO THE MODEL. THE REASON IS TO         ///
+///  FACILITATE AUTOMATION OF ADMIN FORMS. YOU CAN ALWAYS       ///
+///  DO A MODEL-SPECIFIC REPOSITORY IF NEED BE.                 ///
+///////////////////////////////////////////////////////////////////
+
+
+// LaSalle Software
+use Lasallecms\Lasallecmsapi\Repositories\BaseRepository;
 use Lasallecms\Lasallecmsapi\FormProcessing\BaseFormProcessing;
 
-// Tag Repository Interface
-use Lasallecms\Lasallecmsapi\Contracts\PostupdateRepository;
-
-
 /*
- * Process an update.
- * Go through the standard process (interface).
+ * Process an existing record.
+ *
+ * FYI: BaseFormProcessing implements the FormProcessing interface.
  */
-class UpdatePostupdateFormProcessing extends BaseFormProcessing implements FormProcessing {
-
-
+class UpdatePostupdateFormProcessing extends BaseFormProcessing
+{
     /*
      * Instance of repository
      *
-     * @var Lasallecms\Lasallecmsapi\Contracts\PostupdateRepository
+     * @var Lasallecms\Lasallecmsapi\Repositories\BaseRepository
      */
     protected $repository;
+
+
+    ///////////////////////////////////////////////////////////////////
+    /// SPECIFY THE TYPE OF PERSIST THAT IS GOING ON HERE:          ///
+    ///  * "create"  for INSERT                                     ///
+    ///  * "update   for UPDATE                                     ///
+    ///  * "destroy" for DELETE                                     ///
+    ///////////////////////////////////////////////////////////////////
+    /*
+     * Type of persist
+     *
+     * @var string
+     */
+    protected $type = "update";
+
+    ///////////////////////////////////////////////////////////////////
+    /// SPECIFY THE FULL NAMESPACE AND CLASS NAME OF THE MODEL      ///
+    ///////////////////////////////////////////////////////////////////
+    /*
+     * Namespace and class name of the model
+     *
+     * @var string
+     */
+    protected $namespaceClassnameModel = "Lasallecms\Lasallecmsapi\Models\Postupdate";
+
+
+
+    ///////////////////////////////////////////////////////////////////
+    ///   USUALLY THERE IS NOTHING ELSE TO MODIFY FROM HERE ON IN   ///
+    ///////////////////////////////////////////////////////////////////
+
 
     /*
      * Inject the model
      *
-     * @param  Lasallecms\Lasallecmsapi\Contracts\PostupdateRepository
+     * @param Lasallecms\Lasallecmsapi\Repositories\BaseRepository
      */
-    public function __construct(PostupdateRepository $repository) {
+    public function __construct(BaseRepository $repository)
+    {
         $this->repository = $repository;
+
+        $this->repository->injectModelIntoRepository($this->namespaceClassnameModel);
     }
 
     /*
-     * The processing steps.
+     * The form processing steps.
      *
-     * @param  The command bus object   $updateTagCommand
-     * @return The custom response array
+     * @param  object  $createCommand   The command bus object
+     * @return array                    The custom response array
      */
-    public function quarterback($updateTagCommand) {
+    public function quarterback($updateCommand)
+    {
+        // Convert the command bus object into an array
+        $data = (array) $updateCommand;
 
-        // Get inputs into array
-        $data = (array) $updateTagCommand;
-
-        // Foreign Key check --> not applicable
-        //$this->isForeignKeyOk($command);
 
         // Sanitize
+        $data = $this->sanitize($data, $this->type);
 
-        // **** YO THERE!!!!!  ==> NEED SANITIZE AND VALIDATE RULES IN DA MODEL!!!!!!     *********
-
-
-        $data = $this->sanitize($data, "update");
 
         // Validate
-        if ($this->validate($data, "update") != "passed")
+        if ($this->validate($data, $this->type) != "passed")
         {
             // Unlock the record
             $this->unlock($data['id']);
 
             // Prepare the response array, and then return to the edit form with error messages
-            return $this->prepareResponseArray('validation_failed', 500, $data, $this->validate($data, "update"));
+            return $this->prepareResponseArray('validation_failed', 500, $data, $this->validate($data, $this->type));
         }
 
 
-        // Update
-        if (!$this->persist($data))
+        // Even though we already sanitized the data, we further "wash" the data
+        $data = $this->wash($data);
+
+
+        // UPDATE record
+        if (!$this->persist($data, $this->type))
         {
             // Unlock the record
             $this->unlock($data['id']);
@@ -107,36 +148,17 @@ class UpdatePostupdateFormProcessing extends BaseFormProcessing implements FormP
             return $this->prepareResponseArray('persist_failed', 500, $data);
         }
 
+
         // Unlock the record
         $this->unlock($data['id']);
+
 
         // Prepare the response array, and then return to the command
         return $this->prepareResponseArray('update_successful', 200, $data);
 
+
+        ///////////////////////////////////////////////////////////////////
+        ///     NO EVENTS ARE SPECIFIED IN THE BASE FORM PROCESSING     ///
+        ///////////////////////////////////////////////////////////////////
     }
-
-
-    /*
-     * Any constraints to check due to foreign keys
-     *
-     * @param  array  $data
-     * @return bool
-     */
-    public function isForeignKeyOk($data){}
-
-    /*
-     * Persist --> save/update to the database
-     *
-     * @param  array  $data
-     * @return bool
-     */
-    public function persist($data){
-
-        // Extra step: prepare data for persist
-        $data = $this->repository->preparePostupdateForPersist($data);
-
-        return $this->repository->updatePostupdate($data);
-    }
-
-
 }

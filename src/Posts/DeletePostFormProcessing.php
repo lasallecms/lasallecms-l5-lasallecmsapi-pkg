@@ -30,31 +30,78 @@ namespace Lasallecms\Lasallecmsapi\Posts;
  *
  */
 
+
+///////////////////////////////////////////////////////////////////
+///            THIS IS A COMMAND HANDLER                        ///
+///////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////
+///  NOTE: THE REPOSITORY IS THE BASE REPOSITORY, NOT A         ///
+///  REPOSITORY SPECIFIC TO THE MODEL. THE REASON IS TO         ///
+///  FACILITATE AUTOMATION OF ADMIN FORMS. YOU CAN ALWAYS       ///
+///  DO A MODEL-SPECIFIC REPOSITORY IF NEED BE.                 ///
+///////////////////////////////////////////////////////////////////
+
+
 // LaSalle Software
-use Lasallecms\Lasallecmsapi\Repositories\PostRepository;
+use Lasallecms\Lasallecmsapi\Repositories\BaseRepository;
 use Lasallecms\Lasallecmsapi\FormProcessing\BaseFormProcessing;
 
 /*
  * Process a deletion.
+ *
+ * FYI: BaseFormProcessing implements the FormProcessing interface.
  */
 class DeletePostFormProcessing extends BaseFormProcessing
 {
     /*
      * Instance of repository
      *
-     * @var Lasallecms\Lasallecmsapi\Repositories\PostRepository
+     * @var Lasallecms\Lasallecmsapi\Repositories\BaseRepository
      */
     protected $repository;
+
+
+    ///////////////////////////////////////////////////////////////////
+    /// SPECIFY THE TYPE OF PERSIST THAT IS GOING ON HERE:          ///
+    ///  * "create"  for INSERT                                     ///
+    ///  * "update   for UPDATE                                     ///
+    ///  * "destroy" for DELETE                                     ///
+    ///////////////////////////////////////////////////////////////////
+    /*
+     * Type of persist
+     *
+     * @var string
+     */
+    protected $type = "destroy";
+
+    ///////////////////////////////////////////////////////////////////
+    /// SPECIFY THE FULL NAMESPACE AND CLASS NAME OF THE MODEL      ///
+    ///////////////////////////////////////////////////////////////////
+    /*
+     * Namespace and class name of the model
+     *
+     * @var string
+     */
+    protected $namespaceClassnameModel = "Lasallecms\Lasallecmsapi\Models\Post";
+
+
+    ///////////////////////////////////////////////////////////////////
+    ///   USUALLY THERE IS NOTHING ELSE TO MODIFY FROM HERE ON IN   ///
+    ///////////////////////////////////////////////////////////////////
 
 
     /*
      * Inject the model
      *
-     * @param  Lasallecms\Lasallecmsapi\Repositories\PostRepository
+     * @param  Lasallecms\Lasallecmsapi\Repositories\BaseRepository
      */
-    public function __construct(PostRepository $repository)
+    public function __construct(BaseRepository $repository)
     {
         $this->repository = $repository;
+
+        $this->repository->injectModelIntoRepository($this->namespaceClassnameModel);
     }
 
 
@@ -64,52 +111,19 @@ class DeletePostFormProcessing extends BaseFormProcessing
      * @param  The command bus object   $deletePostCommand
      * @return The custom response array
      */
-    public function quarterback($deletePostCommand)
+    public function quarterback($id)
     {
-        // Get inputs into array
-        $data = (array) $deletePostCommand;
-
-        // Foreign Key check ==> not applicable!
-
-        // Sanitize -> not applicable
-
-        // Validate -> not applicable
-
-
-        // Delete!
-        if (!$this->persist($data))
+        // DELETE record
+        if (!$this->persist($id, $this->type))
         {
             // Prepare the response array, and then return to the edit form with error messages
             // Laravel's https://github.com/laravel/framework/blob/5.0/src/Illuminate/Database/Eloquent/Model.php
             //  does not prepare a MessageBag object, so we'll whip up an error message in the
             //  originating controller
-            return $this->prepareResponseArray('persist_failed', 500, $data);
+            return $this->prepareResponseArray('persist_failed', 500, $id);
         }
 
-        // Unlock the record --> not applicable
-
         // Prepare the response array, and then return to the command
-        return $this->prepareResponseArray('create_successful', 200, $data);
-    }
-
-
-    /*
-     * Any constraints to check due to foreign keys
-     *
-     * @param  array  $data
-     * @return bool
-     */
-    public function isForeignKeyOk($data){}
-
-
-    /*
-     * Persist --> save/create to the database
-     *
-     * @param  array  $data
-     * @return bool
-     */
-    public function persist($data)
-    {
-        return $this->repository->getDestroy($data['id']->id);
+        return $this->prepareResponseArray('create_successful', 200, $id);
     }
 }

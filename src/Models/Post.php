@@ -1,4 +1,5 @@
-<?php namespace Lasallecms\Lasallecmsapi\Models;
+<?php
+namespace Lasallecms\Lasallecmsapi\Models;
 
 /**
  *
@@ -29,24 +30,36 @@
  *
  */
 
+// LaSalle Software
 use Lasallecms\Lasallecmsapi\Models\BaseModel;
 
-use Carbon\Carbon;
+// Laravel facades
 use Illuminate\Support\Facades\Url;
 
+// Third party classes
+use Carbon\Carbon;
 
-class Post extends BaseModel {
 
+class Post extends BaseModel
+{
+    ///////////////////////////////////////////////////////////////////
+    ///////////     MANDATORY USER DEFINED PROPERTIES      ////////////
+    ///////////              MODIFY THESE!                /////////////
+    ///////////////////////////////////////////////////////////////////
+
+
+    // LARAVEL MODEL CLASS PROPERTIES
 
     /**
      * The database table used by the model.
      *
-     * Want this for my slug method(s), instead of passing table as param
+     * The convention is plural -- and plural is assumed.
+     *
+     * Lowercase.
      *
      * @var string
      */
-    public $table = 'posts';
-
+    public $table = "posts";
 
     /**
      * Which fields may be mass assigned
@@ -55,6 +68,92 @@ class Post extends BaseModel {
     protected $fillable = [
         'title', 'slug', 'content', 'excerpt', 'meta_description', 'enabled', 'featured_image', 'publish_on'
     ];
+
+
+    // PACKAGE PROPERTIES
+
+    /*
+     * Name of this package
+     *
+     * @var string
+     */
+    public $package_title = "LaSalleCMS";
+
+
+    // MODEL PROPERTIES
+
+    /*
+     * Model class namespace.
+     *
+     * Do *NOT* specify the model's class.
+     *
+     * @var string
+     */
+    public $model_namespace = "Lasallecms\Lasallecmsapi\Models";
+
+    /*
+     * Model's class.
+     *
+     * Convention is capitalized and singular -- which is assumed.
+     *
+     * @var string
+     */
+    public $model_class = "Post";
+
+
+    // RESOURCE ROUTE PROPERTIES
+
+    /*
+     * The base URL of the resource routes.
+     *
+     * Frequently is the same as the table name.
+     *
+     * By convention, plural.
+     *
+     * Lowercase.
+     *
+     * @var string
+     */
+    public $resource_route_name   = "posts";
+
+
+    // FORM PROCESSORS PROPERTIES.
+    // THESE ARE THE ADMIN CRUD COMMAND HANDLERS.
+    // THE ONLY REASON YOU HAVE TO CREATE THESE COMMAND HANDLERS AT ALL IS THAT
+    // THE EVENTS DIFFER. EVERYTHING THAT HAPPENS UP TO THE "PERSIST" IS PRETTY STANDARD.
+
+    /*
+     * Namespace of the Form Processors
+     *
+     * MUST *NOT* have a slash at the end of the string
+     *
+     * @var string
+     */
+    public $namespace_formprocessor = 'Lasallecms\Lasallecmsapi\Posts';
+
+    /*
+     * Class name of the CREATE Form Processor command
+     *
+     * @var string
+     */
+    public $classname_formprocessor_create = 'CreatePostFormProcessing';
+
+    /*
+     * Namespace and class name of the UPDATE Form Processor command
+     *
+     * @var string
+     */
+    public $classname_formprocessor_update = 'UpdatePostFormProcessing';
+
+    /*
+     * Namespace and class name of the DELETE (DESTROY) Form Processor command
+     *
+     * @var string
+     */
+    public $classname_formprocessor_delete = 'DeletePostFormProcessing';
+
+
+    // SANITATION RULES PROPERTIES
 
     /**
      * Sanitation rules for Create (INSERT)
@@ -87,6 +186,8 @@ class Post extends BaseModel {
     ];
 
 
+    // VALIDATION RULES PROPERTIES
+
     /**
      * Validation rules for  Create (INSERT)
      *
@@ -112,8 +213,168 @@ class Post extends BaseModel {
     ];
 
 
+    // USER GROUPS & ROLES PROPERTIES
+
     /*
-    * Many to many relationship with categories
+     * User groups that are allowed to execute each controller action
+     *
+     * @var array
+     */
+    public $allowed_user_groups = [
+        ['index'   => ['Super Administrator']],
+        ['create'  => ['Super Administrator']],
+        ['store'   => ['Super Administrator']],
+        ['edit'    => ['Super Administrator']],
+        ['update'  => ['Super Administrator']],
+        ['destroy' => ['Super Administrator']],
+    ];
+
+
+    // FIELD LIST PROPERTIES
+
+    /*
+     * Field list
+     *
+     * ID and TITLE must go first.
+     *
+     * Forms will list fields in the order fields are listed in this array.
+     *
+     * @var array
+     */
+    public $field_list = [
+        [
+            'name'        => 'id',
+            'type'        => 'int',
+            'info'        => false,
+            'index_skip'  => false,
+            'index_align' => 'center',
+        ],
+        [
+            'name'         => 'title',
+            'type'         => 'varchar',
+            'info'         => false,
+            'index_skip'   => false,
+            'index_align'  => 'center',
+            'persist_wash' => 'title',
+        ],
+        [
+            'name'         => 'slug',
+            'type'         => 'varchar',
+            'info'         => 'No spaces! A unique slug will be generated automatically when left blank.',
+            'index_skip'   => true,
+        ],
+        [
+            'name'         => 'content',
+            'type'         => 'text-with-editor',
+            'info'         => false,
+            'index_skip'   => true,
+            'persist_wash' => 'content',
+        ],
+        [
+            'name'         => 'excerpt',
+            'type'         => 'text-no-editor',
+            'info'         => "Teaser text displayed on your site's post listing. You can leave blank, or hand-craft your excerpt. Note the config settings for excerpts.",
+            'index_skip'   => false,
+            'index_align'  => 'left',
+        ],
+        [
+            'name'         => 'meta_description',
+            'type'         => 'varchar',
+            'info'         => 'This is the blurb that displays in Google search results. Excerpt is used when left blank.',
+            'index_skip'   => true,
+        ],
+        [
+            'name'         => 'canonical_url',
+            'type'         => 'varchar',
+            'info'         => 'Preferred URL for search engines. Auto created when blank.',
+            'index_skip'   => true,
+        ],
+        [
+            'name'         => 'featured_image',
+            'type'         => 'varchar',
+            'info'         => 'The one single image that represents this post, displayed in lists, and at top of the post.',
+            'index_skip'   => true,
+        ],
+        [
+            'name'         => 'enabled',
+            'type'         => 'boolean',
+            'info'         => false,
+            'index_skip'   => false,
+            'index_align'  => 'center',
+            'persist_wash' => 'enabled',
+        ],
+        [
+            'name'         => 'publish_on',
+            'type'         => 'date',
+            'info'         => false,
+            'index_skip'   => false,
+            'index_align'  => 'center',
+            'persist_wash' => 'publish_on',
+        ],
+        [
+            'name'                => 'categories',
+            'type'                => 'related_table',
+            'related_table_name'  => 'categories',
+            'related_namespace'   => 'Lasallecms\Lasallecmsapi\Models',
+            'related_model_class' => 'Category',
+            'related_fk_constraint' => false,
+            'related_pivot_table' => true,
+            'info'                => 'LaSalleCMS uses categories to group posts in the front-end.',
+            'index_skip'          => false,
+            'index_align'         => 'center',
+        ],
+        [
+            'name'                => 'tags',
+            'type'                => 'related_table',
+            'related_table_name'  => 'tags',
+            'related_namespace'   => 'Lasallecms\Lasallecmsapi\Models',
+            'related_model_class' => 'Tag',
+            'related_fk_constraint' => false,
+            'related_pivot_table' => true,
+            'info'                => false,
+            'index_skip'          => true,
+        ]
+    ];
+
+
+    // MISC PROPERTIES
+
+    /*
+     * Suppress the delete button when just one record to list, in the listings (index) page
+     *
+     * true  = suppress the delete button when just one record to list
+     * false = display the delete button when just one record to list
+     *
+     * @var bool
+     */
+    public $suppress_delete_button_when_one_record = false;
+
+
+    /*
+     * DO NOT DELETE THESE CORE RECORDS.
+     *
+     * Specify the TITLE of these records
+     *
+     * Assumed that this database table has a "title" field
+     *
+     * @var array
+     */
+    public $do_not_delete_these_core_records = [];
+
+
+
+    ///////////////////////////////////////////////////////////////////
+    //////////////        RELATIONSHIPS             ///////////////////
+    ///////////////////////////////////////////////////////////////////
+
+    /*
+    * Many to many relationship with categories.
+    *
+    * Method name must be:
+    *    * the model name,
+    *    * NOT the table name,
+    *    * singular;
+    *    * lowercase.
     *
     * @return Eloquent
     */
@@ -123,7 +384,13 @@ class Post extends BaseModel {
     }
 
     /*
-     * Many to many relationship with tags
+     * Many to many relationship with tags.
+     *
+     * Method name must be:
+     *    * the model name,
+     *    * NOT the table name,
+     *    * singular;
+     *    * lowercase.
      *
      * @return Eloquent
      */
@@ -133,7 +400,13 @@ class Post extends BaseModel {
     }
 
     /*
-     * One to one relationship with user_id
+     * One to one relationship with user_id.
+     *
+     * Method name must be:
+     *    * the model name,
+     *    * NOT the table name,
+     *    * singular;
+     *    * lowercase.
      *
      * @return Eloquent
      */
@@ -145,6 +418,12 @@ class Post extends BaseModel {
     /*
      * One to many relationship with postupdate_id
      *
+     * Method name must be:
+     *    * the model name,
+     *    * NOT the table name,
+     *    * singular;
+     *    * lowercase.
+     *
      * @return Eloquent
      */
     public function postupdate()
@@ -152,6 +431,11 @@ class Post extends BaseModel {
         return $this->hasMany('Lasallecms\Lasallecmsapi\Models\Postupdate');
     }
 
+
+
+    ///////////////////////////////////////////////////////////////////
+    //////////////        OTHER METHODS             ///////////////////
+    ///////////////////////////////////////////////////////////////////
 
     /**
      * Returns a formatted post content entry,
@@ -163,7 +447,6 @@ class Post extends BaseModel {
     {
         return nl2br($this->content);
     }
-
 
     /**
      * Get the date the post was created.
@@ -178,6 +461,7 @@ class Post extends BaseModel {
         }
         return String::date($date);
     }
+
     /**
      * Get the URL to the post.
      *
@@ -187,8 +471,4 @@ class Post extends BaseModel {
     {
         return Url::to($this->slug);
     }
-
-
-
-
 }

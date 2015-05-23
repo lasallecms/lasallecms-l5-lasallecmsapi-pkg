@@ -30,11 +30,21 @@ namespace Lasallecms\Lasallecmsapi\Repositories;
  *
  */
 
+
+
+///////////////////////////////////////////////////////////////////
+//// USER MANAGEMENT AND AUTHENTICATION IS SO BESPOKE THAT     ////
+////      IT IS NOT PART OF LASALLE's FORM AUTOMATION          ////
+///////////////////////////////////////////////////////////////////
+
+
+
 // LaSalle Software
 use Lasallecms\Usermanagement\Models\User;
 
 // Laravel facades
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class UserRepository extends BaseRepository
 {
@@ -72,13 +82,31 @@ class UserRepository extends BaseRepository
      * Find all the post records associated with a tag
      *
      * @param id  $id
-     * @return int
+     * @return array
      */
     public function countAllPostsThatHaveUserId($id)
     {
-        $user = $this->getFind($id);
-        $usersWithPosts = $user->posts;
-        return count($usersWithPosts);
+        // How many posts did this user create (created_by)?
+        $results = DB::table('posts')->where('created_by', '=', $id)->get();
+
+        if ( (count($results)) == 0 || (empty($results)) )
+        {
+            $created_by = 0;
+        } else {
+            $created_by = count($results);
+        }
+
+        // How many posts did this user update (updated_by)?
+        $results = DB::table('posts')->where('updated_by', '=', $id)->get();
+
+        if ( (count($results)) == 0 || (empty($results)) )
+        {
+            $updated_by = 0;
+        } else {
+            $updated_by = count($results);
+        }
+
+        return ['created_by' => $created_by, 'updated_by' => $updated_by];
     }
 
     /*
@@ -103,7 +131,26 @@ class UserRepository extends BaseRepository
     }
 
 
-//config('auth.administrator_first_among_equals_email')
+    /*
+     * Get validation array for UPDATE WITH PASSWORD from the user model
+     *
+     * @return array
+     */
+    public function getValidationRulesForUpdateWithPassword()
+    {
+        return $this->model->validationRulesForUpdateWithPassword;
+    }
+
+    /*
+     * Get validation array for UPDATE WITH *NO* PASSWORD from the user model
+     *
+     * @return array
+     */
+    public function getValidationRulesForUpdateNoPassword()
+    {
+        return $this->model->validationRulesForUpdateNoPassword;
+    }
+
 
     /*
      * Create (INSERT)
