@@ -1,4 +1,5 @@
-<?php namespace Lasallecms\Lasallecmsapi\Models;
+<?php
+namespace Lasallecms\Lasallecmsapi\Models;
 
 /**
  *
@@ -29,6 +30,7 @@
  *
  */
 
+// LaSalle Software
 use Lasallecms\Lasallecmsapi\Models\BaseModel;
 
 class Post_category extends BaseModel
@@ -40,5 +42,4 @@ class Post_category extends BaseModel
      * @var binary
      */
     public $timestamps = false;
-
 }

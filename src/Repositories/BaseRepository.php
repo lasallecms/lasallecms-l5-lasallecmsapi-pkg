@@ -37,11 +37,12 @@ namespace Lasallecms\Lasallecmsapi\Repositories;
 // Laravel facades
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 
 // Laravel classes
 use Illuminate\Container\Container as Container;
+use Illuminate\Support\Str;
 
 // Third party classes
 use Carbon\Carbon;
@@ -602,6 +603,11 @@ class BaseRepository
                 $data['canonical_url'] = $this->prepareCanonicalURLForPersist($data['$slug']);
             }
 
+            if (( $field['name'] == "url" ) || ($field['persist_wash'] == "url"))
+            {
+                $data[$field['name']] = $this->prepareURLForPersist($data[$field['name']]);
+            }
+
             if (( $field['name'] == "content") || ($field['persist_wash'] == "content"))
             {
                 $data[$field['name']] = $this->prepareContentForPersist($data[$field['name']]);
@@ -640,6 +646,11 @@ class BaseRepository
             if (($field['name'] == "email") || ($field['persist_wash'] == "email"))
             {
                 $data[$field['name']] = $this->prepareEmailForPersist($data[$field['name']]);
+            }
+
+            if (($field['name'] == "composite_title") || ($field['type'] == "composite_title"))
+            {
+                $data[$field['name']] = $this->prepareCompositeTitleForPersist($field['fields_to_concatenate'], $data);
             }
         }
 
@@ -783,6 +794,26 @@ class BaseRepository
         return $baseURL.'/'.$type.'/'.$slug;
     }
 
+
+    /*
+     * Wash URL for persist.
+     *
+     * Does *not* test for a .com or .ca or other TLD
+     *
+     * @param  text  $url
+     * @return text
+     */
+    public function prepareURLForPersist($url)
+    {
+        if (substr($url, 0, 7 ) == "http://") return $url;
+
+        if (substr($url, 0, 8 ) == "http://") return $url;
+
+        $washedUrl  = "http://";
+        $washedUrl .= $url;
+        return $url;
+    }
+
     /*
      * Transform content for persist.
      *
@@ -924,7 +955,40 @@ class BaseRepository
         return $email;
     }
 
+    /*
+     * Concatenate fields for the composite Title field
+     *
+     * @param  array    $fieldsToConcatenate
+     * @param  array    $data
+     * @return string
+     */
+    public function prepareCompositeTitleForPersist($fieldsToConcatenate, $data)
+    {
+        $composite_title = "";
 
+        // count to determine spacing between fields
+        $count = count($fieldsToConcatenate);
+        $i = 1;
+
+
+        foreach ($fieldsToConcatenate as $fieldToConcatenate)
+        {
+            // If the field is blank, then skip the concatenation.
+            // Eg: The field "street2" is blank
+            if (($data[$fieldToConcatenate] == "") || (!$data[$fieldToConcatenate]) || (empty($data[$fieldToConcatenate])))
+            {
+                // blank on purpose --> yeah, I'm leaving it this way 'cause three months from now I'll actually
+                //                      understand what I was thinking on the wrong side of midnight on May 27th, 2015!
+
+            } else {
+
+                $composite_title .= $data[$fieldToConcatenate];
+
+                if ($i < $count) $composite_title .= " ";
+            }
+        }
+        return $composite_title;
+    }
 
 
 
@@ -955,6 +1019,14 @@ class BaseRepository
                 continue;
             }
 
+            // Special handling for the composite_title field
+            if ($field['name'] == "composite_title")
+            {
+                $modelInstance->title = $data[$field['name']];
+                continue;
+            }
+
+
             // Related tables with pivot tables; that is, with one-to-many or many-to-many relationships
             // have their own save routine, since the relationships are stored in a separate database table
             // Note: empty 'related_pivot_table' in the field list produces exception error. Only 'related_table"
@@ -984,7 +1056,14 @@ class BaseRepository
             // Iterate through the field list to identify possible table relationships that use pivot database tables
             foreach ($field_list as $field)
             {
-                if (($field['type'] == "related_table") && ($field['related_pivot_table']))
+                echo "<hr>";
+                echo "<pre>";
+                print_r($field);
+                echo "</pre>";
+                //dd('1059');
+
+
+                if (($field['type'] == "related_table") && (!empty($field['related_pivot_table'])))
                 {
                     // INSERT into the pivot table
                     $this->associateRelatedRecordsToNewRecord(
@@ -1067,6 +1146,13 @@ class BaseRepository
             if ($field['type'] == "password")
             {
                 $modelInstance->$field['name'] = bcrypt($data[$field['name']]);
+                continue;
+            }
+
+            // Special handling for the composite_title field
+            if ($field['name'] == "composite_title")
+            {
+                $modelInstance->title = $data[$field['name']];
                 continue;
             }
 
@@ -1169,22 +1255,64 @@ class BaseRepository
     ///////////////////////////////////////////////////////////////////
 
     /*
+     * Determine which of these four SELECT forms to render:
+     *  * single select from related table for create
+     *  * single select from related table, with existing select, for update
+     *
+     *  * multiple selects from related table for create
+     *  * multiple selects from related table, with existing selects, for update
+     *
+     * Called from blade template files.
+     *
+     * @param  array   $field                Primary table's Field array
+     * @param  string  $action               Create or update
+     * @param  int     $id                   Id of primary table
+     *
+     * @return void
+     */
+    public function determineSelectFormFieldToRenderFromRelatedTable($field, $action, $id=null )
+    {
+        if ($action == "create")
+        {
+            // related_pivot_table == false ==> one-to-one relationship, therefore "single"!
+            if (empty($field['related_pivot_table']))
+            {
+                return $this->singleSelectFromRelatedTableCreate($field);
+
+            } else {
+                return $this->multipleSelectFromRelatedTableCreate($field);
+            }
+        }
+
+        // action = "update"
+
+        // related_pivot_table == false ==> one-to-one relationship, therefore "single"!
+        if (!$field['related_pivot_table'])
+        {
+            return $this->singleSelectFromRelatedTableUpdate($field, $id);
+
+        } else {
+            return $this->multipleSelectFromRelatedTableUpdate($field['related_table_name'], $field['related_model_class'], $id);
+        }
+    }
+
+    /*
      * Construct a dropdown with multiple selects from the related table.
      *
      * YES, THIS WOULD NORMALLY BE IN MY HELPERS PACKAGE, BUT THE "EDIT" VERSION BELOW
      * NEEDS THE REPOSITORY. I WANT TO KEEP THE "CREATE" AND "EDIT" METHODS TOGETHER
      *
-     * @param  stromg   $relatedTableName   Name of the related table
+     * @param  array   $field         Field array
      * @return string
      */
-    public function multipleSelectFromRelatedTableCreate($relatedTableName)
+    public function singleSelectFromRelatedTableCreate($field)
     {
         // Get the records
-        $records =  DB::table($relatedTableName)->where('enabled', '=', 1)->get();
+        $records = $this->selectOptionWhereClauseEnabledField($field['related_table_name']);
 
         // Initiatize the html select tag
         $html = "";
-        $html .= '<select name="'.$relatedTableName.'[]" id="'.$relatedTableName.'" size="6" class="form-control" multiple>';
+        $html .= '<select name="'.$field['name'].'" id="'.$field['name'].'" size="10" class="form-control">';
 
         // Construct the <option></option> tags for ALL tags in the tags table
         foreach ($records as $record)
@@ -1208,19 +1336,121 @@ class BaseRepository
      * YES, THIS WOULD NORMALLY BE IN MY HELPERS PACKAGE, BUT THE "CREATE" VERSION ABOVE
      * NEEDS THE REPOSITORY. I WANT TO KEEP THE "CREATE" AND "EDIT" METHODS TOGETHER
      *
-     * @param  stromg  $tableName   Name of the related table
+     * @param  array   $field         Field array
+     * @param  int     $id            Id of primary table
      * @return string
      */
-    public function multipleSelectFromRelatedTableEdit($relatedTableName, $relatedModelClass, $id)
+    public function singleSelectFromRelatedTableUpdate($field, $id)
     {
         // Get the related records
-        $relatedTableRecords = DB::table($relatedTableName)->where('enabled', '=', 1)->get();
+        $relatedTableRecords = $this->selectOptionWhereClauseEnabledField($field['related_table_name']);
+
+        $selectedIdOFTheRelatedTable =  $this->getFind($id);
+
+        // Initiatize the html select tag
+        $html = "";
+        $html .= '<select name="'.$field['name'].'" id="'.$field['name'].'" size="10" class="form-control">';
+
+        // Construct the <option></option> tags for ALL tags in the tags table
+        foreach ($relatedTableRecords as $relatedTableRecord)
+        {
+            // If this related record is attached to the primary record, then SELECTED it
+            if ( $selectedIdOFTheRelatedTable->$field['name'] == $relatedTableRecord->id)
+            {
+                $selected = ' selected="selected" ';
+            } else {
+                $selected = "";
+            }
+
+            $html .= '<option ';
+            $html .= $selected;
+            $html .= 'value="';
+            $html .= $relatedTableRecord->id;
+            $html .= '">';
+            $html .= $relatedTableRecord->title;
+            $html .= '</option>"';
+        }
+        $html .= '</select>';
+
+        return $html;
+    }
+
+
+
+    /*
+     * Construct a dropdown with multiple selects from the related table.
+     *
+     * YES, THIS WOULD NORMALLY BE IN MY HELPERS PACKAGE, BUT THE "EDIT" VERSION BELOW
+     * NEEDS THE REPOSITORY. I WANT TO KEEP THE "CREATE" AND "EDIT" METHODS TOGETHER
+     *
+     * @param  array    $field         Field array
+     * @return string
+     */
+    public function multipleSelectFromRelatedTableCreate($field)
+    {
+        // Get the records
+        $records = $this->selectOptionWhereClauseEnabledField($field['related_table_name']);
+
+        if (empty($records))
+        {
+            $html  = '<div class="alert alert-warning" role="alert">';
+            $html .= "<strong>There are no ".strtolower($field['related_model_class'])." records to associate with. </strong>";
+            $html .= '</div>';
+
+            return $html;
+        }
+
+        // Initiatize the html select tag
+        $html = "";
+        $html .= '<select name="'.$field['related_table_name'].'[]" id="'.$field['related_table_name'].'" size="10" class="form-control" multiple>';
+
+        // Construct the <option></option> tags for ALL tags in the tags table
+        foreach ($records as $record)
+        {
+            $html .= '<option ';
+            $html .= 'value="';
+            $html .= $record->id;
+            $html .= '">';
+            $html .= $record->title;
+            $html .= '</option>"';
+        }
+        $html .= '</select>';
+
+        return $html;
+    }
+
+    /*
+     * Construct a dropdown with multiple selects from the related table,
+     * highlighting what is already selected.
+     *
+     * YES, THIS WOULD NORMALLY BE IN MY HELPERS PACKAGE, BUT THE "CREATE" VERSION ABOVE
+     * NEEDS THE REPOSITORY. I WANT TO KEEP THE "CREATE" AND "EDIT" METHODS TOGETHER
+     *
+     * @param  string  $relatedTableName     Name of the related table
+     * @param  string  $relatedModelClass    Name of the related model class
+     * @param  int     $id                   Id of primary table
+     * @return string
+     */
+    public function multipleSelectFromRelatedTableUpdate($relatedTableName, $relatedModelClass, $id)
+    {
+        // Get the related records
+        $relatedTableRecords = $this->selectOptionWhereClauseEnabledField($relatedTableName);
+
+        if (empty($relatedTableRecords))
+        {
+            $html  = '<div class="alert alert-warning" role="alert">';
+            $html .= "<strong>There are no ".strtolower($relatedModelClass)." records to associate with. </strong>";
+            $html .= '</div>';
+
+            return $html;
+        }
 
         // Create an array of tag IDs that are currently attached to the post
         $relatedTableRecordsAssociatedWithThisParentId = [];
 
         // Find the related records for the parent
         $allRelatedTableRecordsByParentId = $this->getLookupTableRecordsAssociatedByParentId($relatedModelClass, $id, "title");
+
         foreach ($allRelatedTableRecordsByParentId as $relatedTableRecordByParentId)
         {
             $relatedTableRecordsAssociatedWithThisParentId[] = $relatedTableRecordByParentId->id;
@@ -1230,7 +1460,7 @@ class BaseRepository
         $html = "";
         $html .= '<select name="'.$relatedTableName.'[]" id="'.$relatedTableName.'" size="6" class="form-control" multiple>';
 
-        // Construct the <option></option> tags for ALL tags in the tags table
+        // If this related record is attached to the primary record, then SELECTED it
         foreach ($relatedTableRecords as $relatedTableRecord)
         {
             // If this tag is attached to the post, then SELECTED it
@@ -1263,7 +1493,7 @@ class BaseRepository
     /*
      * What (lookup) table records are associated with another record resident in another table?
      *
-     * Index blade files displaying listings of records use this method. Usually, with Eloquent, we
+     * Index blade files (displaying listings of records) use this method. Usually, with Eloquent, we
      * inject the models, and then use a statement such as "$this->model->find($id)->category->sortBy($sortBy);"
      *
      * @param   string      $relatedModelName    Name of Model that is related to the table
@@ -1286,5 +1516,21 @@ class BaseRepository
     public function newModelInstance()
     {
         return new $this->model;
+    }
+
+    /*
+     * Do a "SELECT * FOR table" with optional "WHERE enabled = 1"
+     *
+     * @param  string   $relatedTableName   The name of the related table
+     * @return eloquent
+     */
+    public function selectOptionWhereClauseEnabledField($relatedTableName)
+    {
+        if (Schema::hasColumn($relatedTableName, 'enabled'))
+        {
+            return DB::table($relatedTableName)->where('enabled', '=', 1)->get();
+        } else {
+            return DB::table($relatedTableName)->get();
+        }
     }
 }
