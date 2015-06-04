@@ -28,14 +28,5 @@ class LasallecmsapiTableSeeder extends Seeder
             'updated_by' => 1,
         ]);
 
-        Tag::create([
-            'title'       => 'blog',
-            'description' => 'The main blog tag',
-            'enabled'     => 1,
-            'created_at' => new DateTime,
-            'created_by' => 1,
-            'updated_at' => new DateTime,
-            'updated_by' => 1,
-        ]);
     }
 }

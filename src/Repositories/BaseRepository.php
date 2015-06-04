@@ -393,12 +393,64 @@ class BaseRepository
     /*
      * Is a table record used in another table?
      *
+     * For Lookup Tables
+     *
      * @param   int  $id  Lookup Table ID
      * @return  array
      */
     public function foreignKeyChecks($id)
     {
         return $this->model->foreignKeyCheck($id);
+    }
+
+
+    /*
+     * A related table can be optional. For example, the PEOPLES table: a person does not have to
+     * be a LaSalle Software user that can login. In fact, it is preferable to *not* make every
+     * person in the CRM database an actual user. MySQL allows for the option to relate, or not, relate
+     * a record via "NULL" or "NOT NULL". Eloquent uses "nullable()":
+     * "$table->integer('locked_by')->nullable()->unsigned();",
+     *
+     * When a related table is mandatory; an ID from the related table must exist in the primary table.
+     * What if there are no records in the related table? Upon save/update, get an "integrity" error from
+     * MySQL. It is better for LaSalle Software to catch the error first (before one spends time filling
+     * out a create/edit form), and not display the create/edit form.
+     *
+     * This method checks if there are mandatory related tables with no records.
+     *
+     * This method relevant for regular tables (not Lookup Tables).
+     *
+     * Note: DISABLED records in the related table are ignored!
+     *
+     * @param   int  $fields    The field list (specified in the model)
+     * @return  array
+     */
+    public function isNotNullableRelatedTablesWithNoRecords($fields)
+    {
+        $result = [];
+        $result['mandatory_no_records'] = false;
+
+        // iterate through the fields
+        foreach ($fields as $field)
+        {
+            // is this field a related table?
+            if ( $field['type'] != "related_table" ) continue;
+
+            // is this related table field mandatory (ie, NOT NULL)?
+            if ($field['nullable']) continue;
+
+            // are there enabled records in the related table?
+            $records = $this->selectOptionWhereClauseEnabledField($field['related_table_name']);
+
+            if (empty($records))
+            {
+                $result['mandatory_no_records'] = true;
+                $result['field']                = $field;
+                return $result;
+            }
+        }
+
+        return $result;
     }
 
 
@@ -588,7 +640,8 @@ class BaseRepository
             // If the "persist_wash" element is empty, then give it a value so the IF statements in this method work
             if ( empty($field['persist_wash']) ) $field['persist_wash'] = "empty";
 
-            if (($field['name'] == "title") || ($field['persist_wash'] == "title"))
+            // Not all title fields are of type "varchar"
+            if ( (($field['name'] == "title") && ($field['type'] == "varchar") ) || ($field['persist_wash'] == "title"))
             {
                 $data[$field['name']] = $this->prepareTitleForPersist($data[$field['name']]);
             }
@@ -600,7 +653,7 @@ class BaseRepository
 
             if ( $field['name'] == "canonical_url" )
             {
-                $data['canonical_url'] = $this->prepareCanonicalURLForPersist($data['$slug']);
+                $data['canonical_url'] = $this->prepareCanonicalURLForPersist($data['slug']);
             }
 
             if (( $field['name'] == "url" ) || ($field['persist_wash'] == "url"))
@@ -638,12 +691,21 @@ class BaseRepository
                 $data[$field['name']] = $this->prepareEnabledForPersist($data[$field['name']]);
             }
 
+            // publish_on is a not nullable field
             if (($field['name'] == "publish_on") || ($field['persist_wash'] == "publish_on"))
             {
                 $data[$field['name']] = $this->preparePublishOnForPersist($data[$field['name']]);
             }
 
-            if (($field['name'] == "email") || ($field['persist_wash'] == "email"))
+            // birthday is nullable!
+            // publish_on is a not nullable field
+            if (($field['name'] == "birthday") || ($field['persist_wash'] == "birthday"))
+            {
+                $data[$field['name']] = $this->prepareBirthdayForPersist($data[$field['name']]);
+            }
+
+
+            if (($field['name'] == "email") || ($field['persist_wash'] == "email") || ($field['type'] == "email") )
             {
                 $data[$field['name']] = $this->prepareEmailForPersist($data[$field['name']]);
             }
@@ -651,6 +713,11 @@ class BaseRepository
             if (($field['name'] == "composite_title") || ($field['type'] == "composite_title"))
             {
                 $data[$field['name']] = $this->prepareCompositeTitleForPersist($field['fields_to_concatenate'], $data);
+            }
+
+            if ($field['type'] == "related_table")
+            {
+                $data[$field['name']] = $this->prepareRelatedTableForPersist($field, $data[$field['name']]);
             }
         }
 
@@ -728,10 +795,20 @@ class BaseRepository
             // Convert all dashes/underscores into separator
             $flip = $separator == '-' ? '_' : '-';
 
+            // wash the title
+            $title = html_entity_decode($title);
+            $title = strip_tags($title);
+            $title = filter_var($title, FILTER_SANITIZE_STRING);
+            // remove the encoded blank chars
+            $title = str_replace("\xc2\xa0",'',$title);
+            // remove encoded apostrophe
+            $title = str_replace("&#39;",'',$title);
+            $title = trim($title);
+
             $slug = preg_replace('!['.preg_quote($flip).']+!u', $separator, $title);
 
             // Remove all characters that are not the separator, letters, numbers, or whitespace.
-       return $this->model->orderBy('publish_on', 'title', 'DESC')->get();     $slug = preg_replace('![^'.preg_quote($separator).'\pL\pN\s]+!u', '', mb_strtolower($slug));
+            $slug = preg_replace('![^'.preg_quote($separator).'\pL\pN\s]+!u', '', mb_strtolower($slug));
 
             // Replace all separator characters and whitespace by a single separator
             $slug = preg_replace('!['.preg_quote($separator).'\s]+!u', $separator, $slug);
@@ -747,6 +824,9 @@ class BaseRepository
 
         // remove the encoded blank chars
         $slug = str_replace("\xc2\xa0",'',$slug);
+
+        // remove encoded apostrophe
+        $slug = str_replace("&#39;",'',$slug);
 
         $slug = trim($slug);
         $slug = strtolower($slug);
@@ -912,6 +992,8 @@ class BaseRepository
     /*
      * Transform publish_on for persist.
      *
+     * This is *NOT* a NULLABLE field, so we canNOT return "null".
+     *
      * @param  datetime  $publish_on
      * @return datetime
      */
@@ -929,6 +1011,31 @@ class BaseRepository
         }
 
         return $publish_on;
+    }
+
+    /*
+     * Transform birthday for persist.
+     *
+     * This is a NULLABLE field, so we can return "null".
+     *
+     * @param  datetime  $birthdate
+     * @return datetime
+     */
+    public function prepareBirthdayForPersist($birthdate)
+    {
+        if
+        (
+            ($birthdate == "0000-00-00 00:00:00")
+            || ($birthdate == "")
+            || ($birthdate == "-0001-11-30 00:00:00")
+            || (!$birthdate)
+        )
+        {
+            // the date field is nullable, so return null
+            return null;
+        }
+
+        return $birthdate;
     }
 
     /*
@@ -990,6 +1097,36 @@ class BaseRepository
         return $composite_title;
     }
 
+    /*
+     * Prepare foreign key field for persist.
+     *
+     * This is for "one" relationships only, where there is an actual field for the
+     * related table's ID in the primary table.
+     *
+     * Basically, the purpose here is to set the data to "null" when there is no value, and
+     * the field is nullable.
+     *
+     * @param  array    $fields
+     * @param  array    $data
+     * @return mixed
+     */
+    public function prepareRelatedTableForPersist($field, $data)
+    {
+        // If the field is nullable, then having associated records is optional.
+        if (
+            ( ($data == "")   ||
+              ($data == null) ||
+              (!$data)        ||
+              (empty($data)) )
+            &&
+            ($field['nullable'])
+        )
+        {
+            $data = null;
+        }
+
+        return $data;
+    }
 
 
     ///////////////////////////////////////////////////////////////////
@@ -1056,22 +1193,34 @@ class BaseRepository
             // Iterate through the field list to identify possible table relationships that use pivot database tables
             foreach ($field_list as $field)
             {
-                echo "<hr>";
-                echo "<pre>";
-                print_r($field);
-                echo "</pre>";
-                //dd('1059');
-
-
                 if (($field['type'] == "related_table") && (!empty($field['related_pivot_table'])))
                 {
-                    // INSERT into the pivot table
-                    $this->associateRelatedRecordsToNewRecord(
-                        $modelInstance,
-                        $data[$field['name']],
-                        $field['related_namespace'],
-                        $field['related_model_class']
-                    );
+                    // If the field is nullable, then having associated records is optional.
+                    if (
+                        ( ($data == "")   ||
+                          ($data == null) ||
+                          (!$data)        ||
+                          (empty($data)) )
+                        &&
+                          ($field['nullable'])
+                        )
+                    {
+                        // blank on purpose... do not add records to the pivot table;
+
+                        echo "<hr>";
+                        echo "<h1>fucking no INSERT for ".$field['name']."</h1>";
+                        echo "<hr>";
+
+
+                    } else {
+                        // INSERT into the pivot table
+                        $this->associateRelatedRecordsToNewRecord(
+                            $modelInstance,
+                            $data[$field['name']],
+                            $field['related_namespace'],
+                            $field['related_model_class']
+                        );
+                    }
                 }
             }
             return true;
@@ -1183,12 +1332,25 @@ class BaseRepository
             {
                 if (($field['type'] == "related_table") && ($field['related_pivot_table']))
                 {
-                    // INSERT into the pivot table
-                    $this->associateRelatedRecordsToUpdatedRecord(
-                        $modelInstance,
-                        $data[$field['name']],
-                        $field['related_model_class']
-                    );
+                    // If the field is nullable, then having associated records is optional.
+                    if (
+                        ( ($data == "")   ||
+                            ($data == null) ||
+                            (!$data)        ||
+                            (empty($data)) )
+                        &&
+                        ($field['nullable'])
+                    )
+                    {
+                        // blank on purpose... do not add records to the pivot table;
+                    } else {
+                        // INSERT into the pivot table
+                        $this->associateRelatedRecordsToUpdatedRecord(
+                            $modelInstance,
+                            $data[$field['name']],
+                            $field['related_model_class']
+                        );
+                    }
                 }
             }
             return true;
@@ -1310,6 +1472,24 @@ class BaseRepository
         // Get the records
         $records = $this->selectOptionWhereClauseEnabledField($field['related_table_name']);
 
+    if (empty($records))
+        {
+            $html  = '<div class="alert alert-warning" role="alert">';
+
+            if ($field['alternate_form_name'])
+            {
+                $modelName = $field['alternate_form_name'];
+            } else {
+                $modelName = $field['related_model_class'];
+            }
+
+            $html .= "<strong>There are no ".strtolower($modelName)." records to associate with. </strong>";
+            $html .= '</div>';
+
+            return $html;
+        }
+
+
         // Initiatize the html select tag
         $html = "";
         $html .= '<select name="'.$field['name'].'" id="'.$field['name'].'" size="10" class="form-control">';
@@ -1321,7 +1501,14 @@ class BaseRepository
             $html .= 'value="';
             $html .= $record->id;
             $html .= '">';
-            $html .= $record->title;
+
+            if ($field['related_table_name'] == "users")
+            {
+                $html .= $record->name;
+            } else {
+                $html .= $record->title;
+            }
+
             $html .= '</option>"';
         }
         $html .= '</select>';
@@ -1345,6 +1532,24 @@ class BaseRepository
         // Get the related records
         $relatedTableRecords = $this->selectOptionWhereClauseEnabledField($field['related_table_name']);
 
+
+        if (empty($relatedTableRecords))
+        {
+            $html  = '<div class="alert alert-warning" role="alert">';
+
+            if ($field['alternate_form_name'])
+            {
+                $modelName = $field['alternate_form_name'];
+            } else {
+                $modelName = $field['related_model_class'];
+            }
+
+            $html .= "<strong>There are no ".strtolower($modelName)." records to associate with. </strong>";
+            $html .= '</div>';
+
+            return $html;
+        }
+
         $selectedIdOFTheRelatedTable =  $this->getFind($id);
 
         // Initiatize the html select tag
@@ -1367,7 +1572,14 @@ class BaseRepository
             $html .= 'value="';
             $html .= $relatedTableRecord->id;
             $html .= '">';
-            $html .= $relatedTableRecord->title;
+
+            if ($field['related_table_name'] == "users")
+            {
+                $html .= $relatedTableRecord->name;
+            } else {
+                $html .= $relatedTableRecord->title;
+            }
+
             $html .= '</option>"';
         }
         $html .= '</select>';
@@ -1528,9 +1740,9 @@ class BaseRepository
     {
         if (Schema::hasColumn($relatedTableName, 'enabled'))
         {
-            return DB::table($relatedTableName)->where('enabled', '=', 1)->get();
+            return DB::table($relatedTableName)->where('enabled', '=', 1)->orderby('title')->get();
         } else {
-            return DB::table($relatedTableName)->get();
+            return DB::table($relatedTableName)->orderby('title')->get();
         }
     }
 }

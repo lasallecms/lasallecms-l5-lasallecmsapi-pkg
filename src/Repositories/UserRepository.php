@@ -45,6 +45,7 @@ use Lasallecms\Usermanagement\Models\User;
 // Laravel facades
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class UserRepository extends BaseRepository
 {
@@ -210,5 +211,37 @@ class UserRepository extends BaseRepository
         $user->updated_by  = Auth::user()->id;
 
         return $user->save();
+    }
+
+
+    ///////////////////////////////////////////////////////////
+    //            The LaSalleCRM PEOPLES table               //
+    ///////////////////////////////////////////////////////////
+
+    /*
+     * Get the ID from the PEOPLES table
+     *
+     * @param  int     $id      Users table ID
+     * @return mixed
+     */
+    public function getPeopleIdForIndexListing($id)
+    {
+        // Does the PEOPLES table exist?
+        if (Schema::hasTable('peoples'))
+        {
+            $person = DB::table('peoples')->where('user_id', '=', $id)->first();
+
+            $full_url = route('admin.crmpeoples.edit', $person->id);
+
+            $html  = '<a href="';
+            $html .= $full_url;
+            $html .= '">';
+            $html .= 'Edit this LaSalle Customer';
+            $html .= '</a>';
+
+            return $html;
+        }
+
+        return "LaSalleCRM is not installed";
     }
 }
