@@ -885,12 +885,17 @@ class BaseRepository
      */
     public function prepareURLForPersist($url)
     {
+        // NO, sometimes want to list the URL simply as a TITLE
+
+        /*
         if (substr($url, 0, 7 ) == "http://") return $url;
 
         if (substr($url, 0, 8 ) == "http://") return $url;
 
         $washedUrl  = "http://";
         $washedUrl .= $url;
+        */
+
         return $url;
     }
 
@@ -1206,11 +1211,6 @@ class BaseRepository
                         )
                     {
                         // blank on purpose... do not add records to the pivot table;
-
-                        echo "<hr>";
-                        echo "<h1>fucking no INSERT for ".$field['name']."</h1>";
-                        echo "<hr>";
-
 
                     } else {
                         // INSERT into the pivot table
@@ -1738,11 +1738,18 @@ class BaseRepository
      */
     public function selectOptionWhereClauseEnabledField($relatedTableName)
     {
+        if ($relatedTableName == "users")
+        {
+            $orderBy = "name";
+        } else {
+            $orderBy = "title";
+        }
+
         if (Schema::hasColumn($relatedTableName, 'enabled'))
         {
-            return DB::table($relatedTableName)->where('enabled', '=', 1)->orderby('title')->get();
+            return DB::table($relatedTableName)->where('enabled', '=', 1)->orderby($orderBy)->get();
         } else {
-            return DB::table($relatedTableName)->orderby('title')->get();
+            return DB::table($relatedTableName)->orderby($orderBy)->get();
         }
     }
 }

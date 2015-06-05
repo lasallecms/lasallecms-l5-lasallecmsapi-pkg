@@ -180,7 +180,24 @@ class UserRepository extends BaseRepository
         $user->created_by  = Auth::user()->id;
         $user->updated_by  = Auth::user()->id;
 
-        return $user->save();
+        // INSERT!
+        $saveWentOk = $user->save();
+
+        // If the save to the database table went ok, then let's INSERT related IDs into the pivot tables,
+        if ($saveWentOk)
+        {
+            // INSERT into the pivot table
+            $this->associateRelatedRecordsToNewRecord(
+                $user,
+                $data['groups'],
+                'Lasallecms\Usermanagement\Models',
+                'Group'
+            );
+
+            return true;
+        }
+
+        return false;
     }
 
     /*
@@ -195,7 +212,12 @@ class UserRepository extends BaseRepository
 
         $user->name       = $data['name'];
         $user->email      = $data['email'];
-        $user->password   = $data['password'];
+
+        // The password need not be changed
+        if ($data['password'] != "")
+        {
+            $user->password   = bcrypt($data['password']);
+        }
 
         if ($data['activated'] != "1")
         {
@@ -210,7 +232,22 @@ class UserRepository extends BaseRepository
         $user->created_by  = Auth::user()->id;
         $user->updated_by  = Auth::user()->id;
 
-        return $user->save();
+        $saveWentOk = $user->save();
+
+        // If the save to the database table went ok, then let's UPDATE/INSERT related IDs into the pivot tables,
+        if ($saveWentOk)
+        {
+            // INSERT into the pivot table
+            $this->associateRelatedRecordsToUpdatedRecord(
+                $user,
+                $data['groups'],
+                'Group'
+            );
+
+            return true;
+        }
+
+        return false;
     }
 
 
@@ -230,6 +267,8 @@ class UserRepository extends BaseRepository
         if (Schema::hasTable('peoples'))
         {
             $person = DB::table('peoples')->where('user_id', '=', $id)->first();
+
+            if (!$person) return "Not in LaSalleCRM";
 
             $full_url = route('admin.crmpeoples.edit', $person->id);
 
