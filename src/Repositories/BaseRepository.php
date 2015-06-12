@@ -264,7 +264,7 @@ class BaseRepository
         $allowedUserGroupsForAllActions = $this->model->allowed_user_groups;
 
         //http://laravel.com/docs/4.2/helpers#arrays
-        return array_flatten( array_fetch($allowedUserGroupsForAllActions, $action) );
+        return array_flatten( array_pluck($allowedUserGroupsForAllActions, $action) );
     }
 
     /*
@@ -285,7 +285,7 @@ class BaseRepository
      */
     public function groupIdTitle($group_id)
     {
-        return DB::table('groups')->where('id', $group_id)->pluck('title');
+        return DB::table('groups')->where('id', $group_id)->value('title');
     }
 
 
@@ -470,7 +470,7 @@ class BaseRepository
 
         $table             = $this->model->table;
         $titlesDoNotDelete = $this->model->do_not_delete_these_core_records;
-        $titleToBeDeleted  = DB::table($table)->where('id', '=', $id)->pluck('title');
+        $titleToBeDeleted  = DB::table($table)->where('id', '=', $id)->value('title');
 
         if (in_array($titleToBeDeleted, $titlesDoNotDelete)) return true;
         return false;
