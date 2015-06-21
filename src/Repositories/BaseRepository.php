@@ -656,10 +656,24 @@ class BaseRepository
                 $data['canonical_url'] = $this->prepareCanonicalURLForPersist($data['slug']);
             }
 
+
+            // The way things have evolved towards version 1.0, the "URL" type does not get pre-washed for persist.
+            // The reason is that, after all, want to just use the URL in a title field, so do *not* want "http://"
+            //
+            // However, whilst putting my Knowledge Base package together, I do need the URL wash. So... what
+            // I am doing is creating a "persist_wash" called "link", which actually performs the needed "prepareURLForPersist".
+            // The prepareURLForPersis method is on line 890 (ish!)
             if (( $field['name'] == "url" ) || ($field['persist_wash'] == "url"))
             {
+                // Ok, not actually doing this pre-wash.
+                //$data[$field['name']] = $this->prepareURLForPersist($data[$field['name']]);
+            }
+            if (( $field['name'] == "link" ) || ($field['persist_wash'] == "link"))
+            {
+                // yes, definitely doing this pre-wash!
                 $data[$field['name']] = $this->prepareURLForPersist($data[$field['name']]);
             }
+
 
             if (( $field['name'] == "content") || ($field['persist_wash'] == "content"))
             {
@@ -885,19 +899,16 @@ class BaseRepository
      */
     public function prepareURLForPersist($url)
     {
-        // NO, sometimes want to list the URL simply as a TITLE
-
-        /*
         if (substr($url, 0, 7 ) == "http://") return $url;
 
         if (substr($url, 0, 8 ) == "http://") return $url;
 
         $washedUrl  = "http://";
         $washedUrl .= $url;
-        */
 
         return $url;
     }
+
 
     /*
      * Transform content for persist.
