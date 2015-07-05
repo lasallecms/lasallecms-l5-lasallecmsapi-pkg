@@ -155,8 +155,10 @@ class Category extends BaseModel
      * @var array
      */
     public $sanitationRulesForCreate = [
-        'title'       => 'trim|strip_tags|ucwords',
-        'description' => 'trim',
+        'title'          => 'trim|strip_tags|ucwords',
+        'content'        => 'trim',
+        'description'    => 'trim',
+        'featured_image' => 'trim',
     ];
 
     /**
@@ -165,7 +167,9 @@ class Category extends BaseModel
      * @var array
      */
     public $sanitationRulesForUpdate = [
-        'description' => 'trim',
+        'content'        => 'trim',
+        'description'    => 'trim',
+        'featured_image' => 'trim',
     ];
 
 
@@ -243,11 +247,24 @@ class Category extends BaseModel
             'persist_wash' => 'title',
         ],
         [
+            'name'         => 'content',
+            'type'         => 'text-with-editor',
+            'info'         => 'This will display on your site. Optional',
+            'index_skip'   => true,
+            'persist_wash' => 'content',
+        ],
+        [
             'name'         => 'description',
             'type'         => 'varchar',
             'type'         => 'text-no-editor',
             'info'         => 'Description is optional. 255 character maximum.',
             'index_skip'   => false,
+        ],
+        [
+            'name'         => 'featured_image',
+            'type'         => 'varchar',
+            'info'         => false,
+            'index_skip'   => true,
         ],
         [
             'name'         => 'enabled',

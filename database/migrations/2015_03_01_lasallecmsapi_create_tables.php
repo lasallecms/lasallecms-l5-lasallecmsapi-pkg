@@ -52,7 +52,9 @@ class CreateTables extends Migration {
                 $table->integer('parent_id')->unsigned()->default(0);
 
                 $table->string('title')->unique();
+                $table->text('content');
                 $table->string('description');
+                $table->string('featured_image');
 
                 $table->boolean('enabled')->default(true);;
 
