@@ -155,7 +155,7 @@ class Category extends BaseModel
      * @var array
      */
     public $sanitationRulesForCreate = [
-        'title'       => 'trim|strip_tags',
+        'title'       => 'trim|strip_tags|ucwords',
         'description' => 'trim',
     ];
 

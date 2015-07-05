@@ -34,6 +34,9 @@ namespace Lasallecms\Lasallecmsapi\Repositories;
  * This is the common base repository for all LaSalle Software, except LaSalleMart
  */
 
+// LaSalle Software
+use Lasallecms\Helpers\Dates\DatesHelper;
+
 // Laravel facades
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -1762,5 +1765,26 @@ class BaseRepository
         } else {
             return DB::table($relatedTableName)->orderby($orderBy)->get();
         }
+    }
+
+
+    ///////////////////////////////////////////////////////////////////
+    //////////            FRONT END METHODS              //////////////
+    ///////////////////////////////////////////////////////////////////
+
+    /*
+     *
+     */
+    public function findEnabledPostBySlug($slug)
+    {
+        $todaysDate = DatesHelper::todaysDateSetToLocalTime();
+        $post = $this->model
+            ->where('slug', $slug)
+            ->where('enabled', 1)
+            ->where('publish_on', '<=', $todaysDate)
+            ->first()
+            ;
+
+        return $post;
     }
 }

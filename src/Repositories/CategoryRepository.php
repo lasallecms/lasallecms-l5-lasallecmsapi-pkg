@@ -33,6 +33,7 @@ namespace Lasallecms\Lasallecmsapi\Repositories;
 // LaSalle Software
 use Lasallecms\Lasallecmsapi\Repositories\BaseRepository;
 use Lasallecms\Lasallecmsapi\Models\Category;
+use Lasallecms\Helpers\Dates\DatesHelper;
 
 // Laravel facades
 use Illuminate\Support\Facades\DB;
@@ -70,28 +71,59 @@ class CategoryRepository extends BaseRepository
     /*
      * What is the category's ID for a given category slug?
      *
-     * @param $categorySlug  text  The category's slug
-     * @return integer
+     * Category must be enabled!
+     *
+     * @param   string   $categoryTitle
+     * @return  collection
      */
     public function findCategoryIdByTitle($categoryTitle)
     {
-        $category = $this->model
-            ->where ('title', '=', $categoryTitle)
-            ->get()
-            ->toArray();
-        return $category[0]['id'];
+        return $this->model
+            ->where ('title', '=', ucwords($categoryTitle))
+            ->where ('enabled', '=', 1)
+            ->first()
+            ;
     }
 
 
     /*
      * Find all the post records associated with a category
      *
-     * @param id  $id
+     * @param  int   $catId
      * @return int
      */
-    public function countAllPostsThatHaveCategoryId($id)
+    public function countAllPostsThatHaveCategoryId($catId)
     {
-        return count($this->model->find($id)->post);
+        return count($this->model->find($catId)->post);
+    }
+
+
+    /*
+     * Find all the post records associated with a category
+     *
+     * ENABLED, PUBLISH_ON <= TODAY, DESC
+     *
+     * @param   int           $catId
+     * @return  collection
+     */
+    public function findEnabledAllPostsThatHaveCategoryId($id)
+    {
+        $collection = $this->model->find($id)->post->sortByDesc('updated_at');
+
+        $filtered = $collection->filter(function ($item) {
+            if ($item->enabled == 1) return true;
+        });
+
+        $filtered = $filtered->filter(function ($item) {
+            $todaysDate = DatesHelper::todaysDateSetToLocalTime();
+            if ($item->publish_on <= $todaysDate) return true;
+        });
+
+
+        // TODO: HAVE TO MANUALLY PAGINATE THE FILTERED COLLECTION :-(
+        // https://laracasts.com/discuss/channels/laravel/laravel-pagination-not-working-with-array-instead-of-collection?page=1#reply-63860
+        // http://www.reddit.com/r/laravel/comments/32kxn8/creating_a_paginator_manually/
+        return $filtered->all();
     }
 
 
