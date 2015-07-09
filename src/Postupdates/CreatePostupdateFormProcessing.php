@@ -149,6 +149,10 @@ class CreatePostupdateFormProcessing extends BaseFormProcessing
         }
 
 
+        // SPECIAL FOR POST UPDATES: INDICATE IN THE POSTS TABLE THAT THERE IS AT LEAST ONE POST UPDATE FOR THAT POST
+        $this->repository->postupdateExists($data['post_id']);
+
+
         // Prepare the response array, and then return to the controller
         return $this->prepareResponseArray('create_successful', 200, $data);
 

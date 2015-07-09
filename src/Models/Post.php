@@ -234,6 +234,9 @@ class Post extends BaseModel
 
     // FIELD LIST PROPERTIES
 
+    // The "postupdate" field is always false, unless there are Post Updates for
+    // a post. It is updated during the Post Update "Create" and "Delete" operations.
+
     /*
      * Field list
      *
@@ -299,6 +302,14 @@ class Post extends BaseModel
         ],
         [
             'name'                  => 'enabled',
+            'type'                  => 'boolean',
+            'info'                  => false,
+            'index_skip'            => false,
+            'index_align'           => 'center',
+            'persist_wash'          => 'enabled',
+        ],
+        [
+            'name'                  => 'postupdate',
             'type'                  => 'boolean',
             'info'                  => false,
             'index_skip'            => false,

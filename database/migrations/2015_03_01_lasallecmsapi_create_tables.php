@@ -120,6 +120,8 @@ class CreateTables extends Migration {
 
                 $table->boolean('enabled')->default(true);
 
+                $table->boolean('postupdate')->default(false);
+
                 $table->date('publish_on');
 
                 $table->timestamp('created_at');

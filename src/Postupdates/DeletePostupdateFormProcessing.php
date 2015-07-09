@@ -113,6 +113,11 @@ class DeletePostupdateFormProcessing extends BaseFormProcessing
      */
     public function quarterback($id)
     {
+
+        // SPECIAL FOR POST UPDATES: WHAT IS THE POST_ID OF THIS POST UPDATE? BETTER FIND OUT BEFORE DELETING THE POST!
+        $post_id = $this->repository->postIdOfPostupdate($id);
+
+
         // DELETE record
         if (!$this->persist($id, $this->type))
         {
@@ -122,6 +127,12 @@ class DeletePostupdateFormProcessing extends BaseFormProcessing
             //  originating controller
             return $this->prepareResponseArray('persist_failed', 500, $id);
         }
+
+
+        // SPECIAL FOR POST UPDATES: INDICATE IN THE POSTS TABLE THAT THERE ARE NO POST UPDATE FOR THAT POST,
+        // WHEN THE LAST POST UPDATE IS DELETED.
+        $this->repository->postupdateNotExist($post_id);
+
 
         // Prepare the response array, and then return to the command
         return $this->prepareResponseArray('create_successful', 200, $id);

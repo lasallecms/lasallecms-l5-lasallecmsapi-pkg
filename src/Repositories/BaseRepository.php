@@ -1713,6 +1713,77 @@ class BaseRepository
 
 
     ///////////////////////////////////////////////////////////////////
+    ////////////               POST UPDATES                   /////////
+    ///////////////////////////////////////////////////////////////////
+
+    /**
+     * When a post update is created, update the POSTS table to indicate that a post update for that post exists.
+     *
+     * @param  int    $post_id    The ID of the post that the post update pertains.
+     * @return void
+     */
+    public function postupdateExists($post_id)
+    {
+        DB::table('posts')
+            ->where('id', '=', $post_id)
+            ->update(['postupdate' => 1])
+            ;
+    }
+
+    /**
+     * What is the post_id of a given postupdate?
+     *
+     * @param  int    $id     The ID of a postupdate
+     * @return mixed
+     */
+    public function postIdOfPostupdate($id)
+    {
+        // $record is a stdClass
+        $record = DB::table('postupdates')
+            ->select('post_id')
+            ->where('id', '=', $id)
+            ->first()
+        ;
+
+        return $record->post_id;
+    }
+
+    /**
+     * When a post update is deleted, and no more post updates exist for that post, then update the
+     * POSTS table to indicate that no post updates for that post exist.
+     *
+     * @param  int    $post_id    The ID of the post that the post update pertains.
+     * @return void
+     */
+    public function postupdateNotExist($post_id)
+    {
+        if ($this->countPostUpdates($post_id) == 0)
+        {
+            DB::table('posts')
+                ->where('id', '=', $post_id)
+                ->update(['postupdate' => 0])
+            ;
+        }
+    }
+
+    /**
+     * How many post update records exist for a particular post?
+     *
+     * @param   int    $post_id    The ID of the post that the post update pertains.
+     * @return  int
+     */
+    public function countPostUpdates($post_id)
+    {
+        //$users = DB::table('users')->count();
+        return DB::table('postupdates')
+            ->where('post_id', $post_id)
+            ->count()
+        ;
+    }
+
+
+
+    ///////////////////////////////////////////////////////////////////
     ////////////            MISC METHODS              /////////////////
     ///////////////////////////////////////////////////////////////////
 
