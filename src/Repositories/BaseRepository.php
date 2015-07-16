@@ -888,7 +888,11 @@ class BaseRepository
 
         if ($this->model->table == "posts") $type = "blog";
 
-        return $baseURL.'/'.$type.'/'.$slug;
+
+        // July 15, 2015: do *NOT* want type!
+
+        //return $baseURL.'/'.$type.'/'.$slug;
+        return $baseURL.'/'.$slug;
     }
 
 

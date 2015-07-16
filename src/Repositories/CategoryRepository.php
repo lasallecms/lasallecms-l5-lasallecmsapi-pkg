@@ -40,7 +40,7 @@ use Illuminate\Support\Facades\DB;
 
 class CategoryRepository extends BaseRepository
 {
-    /*
+    /**
      * Instance of model
      *
      * @var Lasallecms\Lasallecmsapi\Models\Category
@@ -48,7 +48,7 @@ class CategoryRepository extends BaseRepository
     protected $model;
 
 
-    /*
+    /**
      * Inject the model
      *
      * @param  Lasallecms\Lasallecmsapi\Models\Category
@@ -59,7 +59,7 @@ class CategoryRepository extends BaseRepository
     }
 
 
-    /*
+    /**
      * Display all the categories in the admin listing
      *
      * @return collection
@@ -68,7 +68,9 @@ class CategoryRepository extends BaseRepository
     {
         return $this->model->orderBy('title', 'ASC')->get();
     }
-    /*
+
+
+    /**
      * What is the category's ID for a given category slug?
      *
      * Category must be enabled!
@@ -86,7 +88,25 @@ class CategoryRepository extends BaseRepository
     }
 
 
-    /*
+    /**
+     * Get the category record from the category ID
+     *
+     * Enabled categories only!
+     *
+     * @param   int   $categoryId   The ID of the category
+     * @return  int
+     */
+    public function findCategoryById($categoryId)
+    {
+        return $this->model
+            ->where ('id', '=', $categoryId)
+            ->where ('enabled', '=', 1)
+            ->first()
+            ;
+    }
+
+
+    /**
      * Find all the post records associated with a category
      *
      * @param  int   $catId
@@ -98,7 +118,7 @@ class CategoryRepository extends BaseRepository
     }
 
 
-    /*
+    /**
      * Find all the post records associated with a category
      *
      * ENABLED, PUBLISH_ON <= TODAY, DESC
@@ -128,7 +148,7 @@ class CategoryRepository extends BaseRepository
 
 
 
-    /*
+    /**
      * Find all the post records associated with a tag
      *
      * @param id  $id

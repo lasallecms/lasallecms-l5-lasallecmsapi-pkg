@@ -257,7 +257,7 @@ class Post extends BaseModel
         [
             'name'                  => 'title',
             'type'                  => 'varchar',
-            'info'                  => false,
+            'info'                  => 'For meta tags, so maximum length 60-70 characters.',
             'index_skip'            => false,
             'index_align'           => 'center',
             'persist_wash'          => 'title',
@@ -285,7 +285,7 @@ class Post extends BaseModel
         [
             'name'                  => 'meta_description',
             'type'                  => 'varchar',
-            'info'                  => 'This is the blurb that displays in Google search results. Excerpt is used when left blank.',
+            'info'                  => 'This is the blurb that displays in Google search results. Excerpt is used when left blank but I urge you to hand craft this meta-description.  No longer than 155 characters',
             'index_skip'            => true,
         ],
         [
