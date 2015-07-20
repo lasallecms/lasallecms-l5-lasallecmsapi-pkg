@@ -651,7 +651,10 @@ class BaseRepository
 
             if ( $field['name'] == "slug" )
             {
-                $data['slug'] = $this->prepareSlugForPersist($data['title'], $data['slug']);
+                // we need to send over the record ID (basically, the posts ID) to properly determine if this slug exists
+                if (empty($data['id'])) $data['id'] = false;
+
+                $data['slug'] = $this->prepareSlugForPersist($data['title'], $data['slug'], $data['id']);
             }
 
             if ( $field['name'] == "canonical_url" )
@@ -796,19 +799,22 @@ class BaseRepository
         return $description;
     }
 
-    /*
+    /**
      * Prepare slug for persist.
      *
      * @param  text  $title
      * @param  text  $slug
+     * @param  int   $id        The id of the record (eg, of the posts table) that is currently being edited
      * @return text
      */
-    public function prepareSlugForPersist($title, $slug)
+    public function prepareSlugForPersist($title, $slug, $id=false)
     {
         $separator = '-';
 
         if ($slug == "")
         {
+            // No slug.. so this is a "create" form; or, the slug was deleted accidentally and so needs to be regenerated
+
             // Convert all dashes/underscores into separator
             $flip = $separator == '-' ? '_' : '-';
 
@@ -830,14 +836,22 @@ class BaseRepository
             // Replace all separator characters and whitespace by a single separator
             $slug = preg_replace('!['.preg_quote($separator).'\s]+!u', $separator, $slug);
 
+            // well, is another record using this slug already? Let's return a record count, so we can use the count number...
             $rowCount = $this->doesSlugAlreadyExist($slug);
+
             if ($rowCount > 0)
             {
+                // yes, this slug does exist already, so let's append this slug to make it different from what already exists.
                 ++$rowCount;
                 return $slug.$rowCount;
             }
+
+            // no, this slug does not yet exist, so let's use it as-is...
             return $slug;
         }
+
+
+        // Ah, so a slug was entered. So coming from an "edit" form...
 
         // remove the encoded blank chars
         $slug = str_replace("\xc2\xa0",'',$slug);
@@ -850,17 +864,60 @@ class BaseRepository
         $slug = strip_tags($slug);
         $slug = preg_replace('!['.preg_quote($separator).'\s]+!u', $separator, $slug);
 
+
+        // if this slug is a different slug manually entered into the edit form, then process it further
+        if (!$this->isManuallyChangedSlugInEditForm($slug, $id)) {
+            return $slug;
+        }
+
+        // so this slug does belong to the existing ID, but is different than the slug in the database...
+
+        // well, is another record using this slug already? Let's return a record count, so we can use the count number...
         $rowCount = $this->doesSlugAlreadyExist($slug);
 
         if ($rowCount > 0)
         {
+            // yes, this slug does exist already, so let's append this slug to make it different from what already exists.
             ++$rowCount;
             return $slug.$rowCount;
         }
+
+        // no, this slug does not yet exist, so let's use it as-is...
         return $slug;
     }
 
-    /*
+
+    /**
+     * Was the slug changed in the edit form?
+     *
+     * @param  text  $slug
+     * @param  int   $id        The id of the record (eg, of the posts table) that is currently being edited
+     * @return bool
+     */
+    public function isManuallyChangedSlugInEditForm($slug, $id=false)
+    {
+        // If there is no $id, then there's nothing to figure out!
+        if (!$id) return false;
+
+        $record = DB::table($this->model->table)
+            ->where('id', $id)
+            ->first()
+        ;
+
+        if ($record->slug == $slug) {
+
+            // The slug entered into the form is the same slug that is already in the database, so no change...
+            return false;
+
+        } else {
+
+            // The slug entered into the form is different than the slug in the database, so yes it has changed...
+            return true;
+        }
+    }
+
+
+    /**
      * Does the slug already exist in the table?
      *
      * @param  text  $slug
