@@ -1,5 +1,7 @@
 <?php
 
+namespace Lasallecms\Lasallecmsapi;
+
 /**
  *
  * Internal API package for the LaSalle Content Management System, based on the Laravel 5 Framework
@@ -20,7 +22,6 @@
  *
  *
  * @package    Internal API package for the LaSalle Content Management System
-
  * @link       http://LaSalleCMS.com
  * @copyright  (c) 2015, The South LaSalle Trading Corporation
  * @license    http://www.gnu.org/licenses/gpl-3.0.html
@@ -29,33 +30,41 @@
  *
  */
 
+class Version
+{
+    /**
+     * This package's version number.
+     *
+     * @var string
+     */
+    const VERSION = '1.0';
 
 
-return [
+    /**
+     * This package's name.
+     *
+     * @var string
+     */
+    const PACKAGE = 'The internal API for the LaSalle Content System';
 
-	/*
-	|--------------------------------------------------------------------------
-	| Excerpt Length
-	|--------------------------------------------------------------------------
-	|
-	| When an excerpt field is left blank, then the "content" field is used to
-	| construct the excerpt. How many characters of the base "content" field
-	| do you want to use for the excerpt?
-	|
-	*/
-	'how_many_initial_chars_of_content_field_for_excerpt' => '100',
 
-    /*
-	|--------------------------------------------------------------------------
-	| Excerpt Ellipses
-	|--------------------------------------------------------------------------
-	|
-	| Do you prefer adding ellipses to your excerpts? Use this config setting
-    | to do so automatically, instead of remembering to add the ellipses manually
-    | each time you add a post
-	|
-	*/
-    //'excerpt_ellipses' => '',
-    'append_excerpt_with_this_string' => '...',
+    /**
+     * Get the version number of this package.
+     *
+     * @return string
+     */
+    public function version()
+    {
+        return static::VERSION;
+    }
 
-];
+    /**
+     * Get the name of this package.
+     *
+     * @return string
+     */
+    public function packageName()
+    {
+        return static::PACKAGE;
+    }
+}
