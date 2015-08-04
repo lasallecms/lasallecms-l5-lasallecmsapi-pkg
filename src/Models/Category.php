@@ -339,4 +339,24 @@ class Category extends BaseModel
         return $this->hasMany('Lasallecms\Lasallecmsapi\Models\Category', 'parent_id', 'id');
     }
 
+    /*
+     * One to one relationship with LaSalleCast Episodes.
+     *
+     * NOT A TYPO: one to one relationship!
+     *
+     * Method name must be:
+     *    * the model name,
+     *    * NOT the table name,
+     *    * singular;
+     *    * lowercase.
+     *
+     * @return Eloquent
+     */
+    public function episode()
+    {
+        if (class_exists(\Lasallecast\Lasallecastapi\Version::class)) {
+            return $this->belongsTo('Lasallecast\Lasallecastapi\Models\Episode');
+        }
+    }
+
 }
