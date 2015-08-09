@@ -246,110 +246,42 @@ class Post extends BaseModel
      *
      * @var array
      */
-    public $field_list = [
-        [
-            'name'                 => 'id',
-            'type'                 => 'int',
-            'info'                 => false,
-            'index_skip'           => false,
-            'index_align'          => 'center',
-        ],
-        [
-            'name'                  => 'title',
-            'type'                  => 'varchar',
-            'info'                  => 'For meta tags, so maximum length 60-70 characters.',
-            'index_skip'            => false,
-            'index_align'           => 'center',
-            'persist_wash'          => 'title',
-        ],
-        [
-            'name'                  => 'slug',
-            'type'                  => 'varchar',
-            'info'                  => 'No spaces! A unique slug will be generated automatically when left blank.',
-            'index_skip'            => true,
-        ],
-        [
-            'name'                  => 'content',
-            'type'                  => 'text-with-editor',
-            'info'                  => false,
-            'index_skip'            => true,
-            'persist_wash'          => 'content',
-        ],
-        [
-            'name'                  => 'excerpt',
-            'type'                  => 'text-no-editor',
-            'info'                  => "Teaser text displayed on your site's post listing. You can leave blank, or hand-craft your excerpt. Note the config settings for excerpts.",
-            'index_skip'            => false,
-            'index_align'           => 'left',
-        ],
-        [
-            'name'                  => 'meta_description',
-            'type'                  => 'varchar',
-            'info'                  => 'This is the blurb that displays in Google search results. Excerpt is used when left blank but I urge you to hand craft this meta-description.  No longer than 155 characters',
-            'index_skip'            => true,
-        ],
-        [
-            'name'                  => 'canonical_url',
-            'type'                  => 'varchar',
-            'info'                  => 'Preferred URL for search engines. Auto created when blank.',
-            'index_skip'            => true,
-        ],
-        [
-            'name'                  => 'featured_image',
-            'type'                  => 'varchar',
-            'info'                  => 'The one single image that represents this post, displayed in lists, and at top of the post.',
-            'index_skip'            => true,
-        ],
-        [
-            'name'                  => 'enabled',
-            'type'                  => 'boolean',
-            'info'                  => false,
-            'index_skip'            => false,
-            'index_align'           => 'center',
-            'persist_wash'          => 'enabled',
-        ],
-        [
-            'name'                  => 'postupdate',
-            'type'                  => 'boolean',
-            'info'                  => false,
-            'index_skip'            => false,
-            'index_align'           => 'center',
-            'persist_wash'          => 'enabled',
-        ],
-        [
-            'name'                  => 'publish_on',
-            'type'                  => 'date',
-            'info'                  => false,
-            'index_skip'            => false,
-            'index_align'           => 'center',
-            'persist_wash'          => 'publish_on',
-        ],
-        [
-            'name'                  => 'categories',
-            'type'                  => 'related_table',
-            'related_table_name'    => 'categories',
-            'related_namespace'     => 'Lasallecms\Lasallecmsapi\Models',
-            'related_model_class'   => 'Category',
-            'related_fk_constraint' => false,
-            'related_pivot_table'   => true,
-            'nullable'              => false,
-            'info'                  => 'LaSalleCMS uses categories to group posts in the front-end.',
-            'index_skip'            => false,
-            'index_align'           => 'center',
-        ],
-        [
-            'name'                  => 'tags',
-            'type'                  => 'related_table',
-            'related_table_name'    => 'tags',
-            'related_namespace'     => 'Lasallecms\Lasallecmsapi\Models',
-            'related_model_class'   => 'Tag',
-            'related_fk_constraint' => false,
-            'related_pivot_table'   => true,
-            'nullable'              => true,
-            'info'                  => false,
-            'index_skip'            => true,
-        ]
-    ];
+
+
+   //================================================================================
+
+    // Illuminate\Database\Eloquent\abstract class Model
+
+    /**
+     * Get the table associated with the model.
+     *
+     * @return string
+     */
+    /*
+    public function getTable()
+    {
+        if (isset($this->table)) {
+            return $this->table;
+        }
+        return str_replace('\\', '', Str::snake(Str::plural(class_basename($this))));
+    }
+    */
+    //================================================================================
+
+
+
+
+    /* Usually, the field list is specified as a class property. However, in this case,
+       there is a field that is related to a database table that may not exist! It may not
+       exist because the database table is created by an optionally installed package.
+
+       So, we have to see if this package is installed. If it is, then the related field is
+       included in the field list. If not, then it is so excluded. We make this
+       determination in getFieldList();
+    */
+
+    //public $field_list = [];
+
 
 
     // MISC PROPERTIES
@@ -444,6 +376,170 @@ class Post extends BaseModel
     public function postupdate()
     {
         return $this->hasMany('Lasallecms\Lasallecmsapi\Models\Postupdate');
+    }
+
+
+
+
+    ///////////////////////////////////////////////////////////////////
+    //////////////          FIELD LIST              ///////////////////
+    ///////////////////////////////////////////////////////////////////
+
+    /**
+     * This field list includes a field that is related to table created by an optional
+     * LaSalle Software package. This package does not have to be installed, and may not
+     * be installed. If this package is not installed, then we do not want to include
+     * this related field.
+     *
+     * @return array
+     */
+    public function getFieldList()
+    {
+
+        $field_list = [
+            [
+                'name'                 => 'id',
+                'type'                 => 'int',
+                'info'                 => false,
+                'index_skip'           => false,
+                'index_align'          => 'center',
+            ],
+        ];
+
+        if ( class_exists(\Lasallecast\Lasallecastapi\Version::class) ) {
+
+            $field_list[] = [
+                'name'                  => 'episode_id',
+                'alternate_form_name'   => 'Podcast Episode',
+                'type'                  => 'related_table',
+                'related_table_name'    => 'episodes',
+                'related_namespace'     => 'Lasallecast\Lasallecastapi\Models',
+                'related_model_class'   => 'Episode',
+                'related_fk_constraint' => false,
+                'related_pivot_table'   => false,
+                'nullable'              => true,
+                'info'                  => 'LaSalleCast episode.',
+                'index_skip'            => false,
+                'index_align'           => 'center',
+            ];
+        }
+
+        $field_list[] = [
+                'name'                 => 'id',
+                'type'                 => 'int',
+                'info'                 => false,
+                'index_skip'           => false,
+                'index_align'          => 'center',
+        ];
+
+        $field_list[] = [
+                'name'                  => 'title',
+                'type'                  => 'varchar',
+                'info'                  => 'For meta tags, so maximum length 60-70 characters.',
+                'index_skip'            => false,
+                'index_align'           => 'center',
+                'persist_wash'          => 'title',
+        ];
+
+        $field_list[] = [
+                'name'                  => 'slug',
+                'type'                  => 'varchar',
+                'info'                  => 'No spaces! A unique slug will be generated automatically when left blank.',
+                'index_skip'            => true,
+        ];
+
+        $field_list[] = [
+                'name'                  => 'content',
+                'type'                  => 'text-with-editor',
+                'info'                  => false,
+                'index_skip'            => true,
+                'persist_wash'          => 'content',
+        ];
+
+        $field_list[] = [
+                'name'                  => 'excerpt',
+                'type'                  => 'text-no-editor',
+                'info'                  => "Teaser text displayed on your site's post listing. You can leave blank, or hand-craft your excerpt. Note the config settings for excerpts.",
+                'index_skip'            => false,
+                'index_align'           => 'left',
+        ];
+
+        $field_list[] = [
+                'name'                  => 'meta_description',
+                'type'                  => 'varchar',
+                'info'                  => 'This is the blurb that displays in Google search results. Excerpt is used when left blank but I urge you to hand craft this meta-description.  No longer than 155 characters',
+                'index_skip'            => true,
+        ];
+
+        $field_list[] = [
+                'name'                  => 'canonical_url',
+                'type'                  => 'varchar',
+                'info'                  => 'Preferred URL for search engines. Auto created when blank.',
+                'index_skip'            => true,
+        ];
+
+        $field_list[] = [
+                'name'                  => 'featured_image',
+                'type'                  => 'varchar',
+                'info'                  => 'The one single image that represents this post, displayed in lists, and at top of the post.',
+                'index_skip'            => true,
+        ];
+
+        $field_list[] = [
+                'name'                  => 'enabled',
+                'type'                  => 'boolean',
+                'info'                  => false,
+                'index_skip'            => false,
+                'index_align'           => 'center',
+                'persist_wash'          => 'enabled',
+        ];
+
+        $field_list[] = [
+                'name'                  => 'postupdate',
+                'type'                  => 'boolean',
+                'info'                  => false,
+                'index_skip'            => false,
+                'index_align'           => 'center',
+                'persist_wash'          => 'enabled',
+        ];
+
+        $field_list[] = [
+                'name'                  => 'publish_on',
+                'type'                  => 'date',
+                'info'                  => false,
+                'index_skip'            => false,
+                'index_align'           => 'center',
+                'persist_wash'          => 'publish_on',
+        ];
+
+        $field_list[] = [
+                'name'                  => 'categories',
+                'type'                  => 'related_table',
+                'related_table_name'    => 'categories',
+                'related_namespace'     => 'Lasallecms\Lasallecmsapi\Models',
+                'related_model_class'   => 'Category',
+                'related_fk_constraint' => false,
+                'related_pivot_table'   => true,
+                'nullable'              => false,
+                'info'                  => 'LaSalleCMS uses categories to group posts in the front-end.',
+                'index_skip'            => false,
+                'index_align'           => 'center',
+        ];
+
+        $field_list[] = [
+                'name'                  => 'tags',
+                'type'                  => 'related_table',
+                'related_table_name'    => 'tags',
+                'related_namespace'     => 'Lasallecms\Lasallecmsapi\Models',
+                'related_model_class'   => 'Tag',
+                'related_fk_constraint' => false,
+                'related_pivot_table'   => true,
+                'nullable'              => true,
+                'info'                  => false,
+                'index_skip'            => true,
+        ];
+
+        return $field_list;
     }
 
 
