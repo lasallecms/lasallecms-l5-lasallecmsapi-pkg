@@ -965,7 +965,7 @@ class BaseRepository
     {
         if (substr($url, 0, 7 ) == "http://") return $url;
 
-        if (substr($url, 0, 8 ) == "http://") return $url;
+        if (substr($url, 0, 8 ) == "https://") return $url;
 
         $washedUrl  = "http://";
         $washedUrl .= $url;
