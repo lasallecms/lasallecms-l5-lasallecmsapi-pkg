@@ -1,4 +1,5 @@
 <?php
+
 namespace Lasallecms\Lasallecmsapi\Repositories;
 
 /**
@@ -36,13 +37,14 @@ use Lasallecms\Lasallecmsapi\Models\Tag;
 
 // Laravel facades
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class TagRepository extends BaseRepository
 {
     /*
      * Instance of model
      *
-     * @var Lasallecms\Lasallecmsapi\Models\Category
+     * @var Lasallecms\Lasallecmsapi\Models\Tag
      */
     protected $model;
 
@@ -57,40 +59,74 @@ class TagRepository extends BaseRepository
         $this->model = $model;
     }
 
-    /*
-     * Display all the tags in the admin listing
+
+    /**
+     * What is the tag's ID for a given tag title?
      *
-     * @return collection
+     * Tag must be enabled!
+     *
+     * @param   string   $tagTitle
+     * @return  collection
      */
-    public function allTagsForDisplayOnAdminListing()
+    public function findTagIdByTitle($tagTitle)
     {
-        return $this->model->orderBy('title', 'ASC')->get();
+        return $this->model
+            //->where ('title', '=', ucwords($tagTitle))
+            ->where ('title', '=', $tagTitle)
+            ->where ('enabled', '=', 1)
+            ->first()
+        ;
     }
 
 
-    /*
+    /**
+     * Get the tag record from the tag ID
+     *
+     * Enabled tags only!
+     *
+     * @param   int   $tagId   The ID of the category
+     * @return  int
+     */
+    public function findTagById($tagId)
+    {
+        return $this->model
+            ->where ('id', '=', $tagId)
+            ->where ('enabled', '=', 1)
+            ->first()
+        ;
+    }
+
+
+
+    /**
      * Find all the post records associated with a tag
      *
-     * @param id  $id
-     * @return int
+     * ENABLED, PUBLISH_ON <= TODAY, DESC
+     *
+     * @param   int           $tagId    Tag ID
+     * @return  collection
      */
-    public function countAllPostsThatHaveTagId($id)
+    public function findEnabledAllPostsThatHaveTagId($tagId)
     {
-        $tag = $this->model->getFind($id);
-        $tagsWithPosts = $tag->posts;
-        return count($tagsWithPosts);
+        // Well, it's late, and the exact eloquent relational query that works for categories
+        // is not working for tags. All seems well, it really should be working.
+        // So, let's just use DB to get the job done.
+        //$collection = $this->model->find($tagId)->post->sortByDesc('updated_at');
+
+        $raw = DB::raw('SELECT * FROM posts JOIN post_tag on posts.id = post_tag.post_id WHERE post_tag.tag_id = '.$tagId.' AND  posts.enabled = 1 AND posts.publish_on < CURDATE() ORDER BY updated_at DESC');
+
+        $results = DB::select($raw);
+
+        if ( count($results) == 0 ) {
+            return 0;
+        }
+
+        return $results;
     }
 
-    /*
-     * Return specific model
-     *
-     * @param id         Post ID
-     * @return eloquent
-     */
-    public function getFind($id)
-    {
-        return $this->model->findOrfail($id);
-    }
+
+
+
 
 
 }

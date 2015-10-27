@@ -81,7 +81,8 @@ class CategoryRepository extends BaseRepository
     public function findCategoryIdByTitle($categoryTitle)
     {
         return $this->model
-            ->where ('title', '=', ucwords($categoryTitle))
+            //->where ('title', '=', ucwords($categoryTitle))
+            ->where ('title', '=', $categoryTitle)
             ->where ('enabled', '=', 1)
             ->first()
             ;
@@ -126,9 +127,9 @@ class CategoryRepository extends BaseRepository
      * @param   int           $catId
      * @return  collection
      */
-    public function findEnabledAllPostsThatHaveCategoryId($id)
+    public function findEnabledAllPostsThatHaveCategoryId($catId)
     {
-        $collection = $this->model->find($id)->post->sortByDesc('updated_at');
+        $collection = $this->model->find($catId)->post->sortByDesc('updated_at');
 
         $filtered = $collection->filter(function ($item) {
             if ($item->enabled == 1) return true;
@@ -149,7 +150,7 @@ class CategoryRepository extends BaseRepository
 
 
     /**
-     * Find all the post records associated with a tag
+     * Find all the post records associated with a category
      *
      * @param id  $id
      * @return array
