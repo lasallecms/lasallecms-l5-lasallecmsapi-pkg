@@ -170,4 +170,69 @@ class PostRepository extends BaseRepository
             ->first()
         ;
     }
+
+
+
+
+    /**
+     * Find the category title by the category's id
+     *
+     * I have this little function here because I do not want to inject the category's repository.
+     *
+     * The purpose of having the category's title is to build a URL to all posts with that category.
+     *
+     * @param  int     $categoryId   The category's ID
+     * @return string
+     */
+    public function getCategoryTitleById($categoryId)
+    {
+        $category =  DB::table('categories')
+            ->where('id', '=', $categoryId)
+            ->first()
+        ;
+
+        return $category->title;
+    }
+
+
+    /**
+     * Find the tag's titles for those tags that are associated with a post.
+     *
+     * I have this little function here because I do not want to inject the tag's repository.
+     *
+     * @param   int   $postId   The post's ID
+     * @return  array
+     */
+    public function getTagTitlesByPostId($postId)
+    {
+        // Grab the tag ID's from the post_tag table
+        $post_tags = DB::table('post_tag')
+            ->where('post_id', '=', $postId)
+            ->get()
+        ;
+
+        // if there are no tags associated with this post, then return emptiness
+        if (empty($post_tags)) {
+            return $post_tags;
+        }
+
+
+        // ah, there are tags associated with the post
+
+        // initialize the array that will be returned
+        $tagTitles = [];
+
+        // go through each tag_id and grab the tag's title
+        foreach ($post_tags as $post_tag) {
+
+            $tag = DB::table('tags')
+                ->select('title')
+                ->where('id', '=', $post_tag->tag_id)
+                ->first();
+
+            $tagTitles[] = $tag->title;
+        }
+
+        return $tagTitles;
+    }
 }
