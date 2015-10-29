@@ -113,4 +113,61 @@ class PostRepository extends BaseRepository
             ->take($numberOfPostsToTake)
         ;
     }
+
+
+    /**
+     * Find the categories belonging to a post
+     *
+     * @param $postId  The post's ID
+     * @return array
+     */
+    public function findCategoryForPostById($postId)
+    {
+        return $users = DB::table('post_category')
+            ->where('post_id', '=', $postId)
+            ->get()
+        ;
+    }
+
+
+
+    /**
+     * Get the next episode
+     *
+     * @param  int         $categoryId     The category id.
+     * @param  date        $publish_on     The displayed post's publish_on date
+     * @return stdClass Object
+     */
+    public function getNextPost($categoryId, $publish_on)
+    {
+        return DB::table('posts')
+            ->join('post_category', 'posts.id', '=', 'post_category.post_id')
+            ->select('posts.slug')
+            ->where('post_category.category_id', '=', $categoryId)
+            ->where('posts.enabled', '=', 1)
+            ->where('posts.publish_on', '>', $publish_on)
+            ->orderBy('publish_on', 'asc')
+            ->first()
+        ;
+    }
+
+    /**
+     * Get the previous episode
+     *
+     * @param  int         $categoryId     The category id.
+     * @param  date        $publish_on     The displayed post's publish_on date
+     * @return stdClass Object
+     */
+    public function getPreviousPost($categoryId, $publish_on)
+    {
+        return DB::table('posts')
+            ->join('post_category', 'posts.id', '=', 'post_category.post_id')
+            ->select('posts.slug')
+            ->where('post_category.category_id', '=', $categoryId)
+            ->where('posts.enabled', '=', 1)
+            ->where('posts.publish_on', '<', $publish_on)
+            ->orderBy('publish_on', 'desc')
+            ->first()
+        ;
+    }
 }

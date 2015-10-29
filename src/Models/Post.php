@@ -521,7 +521,7 @@ class Post extends BaseModel
                 'related_fk_constraint' => false,
                 'related_pivot_table'   => true,
                 'nullable'              => false,
-                'info'                  => 'LaSalleCMS uses categories to group posts in the front-end.',
+                'info'                  => 'LaSalleCMS uses categories to group posts in the front-end. For posts, best to have one category per post. Next and Previous navigation within a single post relies on just one category per post.',
                 'index_skip'            => false,
                 'index_align'           => 'center',
         ];
@@ -535,7 +535,7 @@ class Post extends BaseModel
                 'related_fk_constraint' => false,
                 'related_pivot_table'   => true,
                 'nullable'              => true,
-                'info'                  => false,
+                'info'                  => 'Usually there are multiple tags per post. My bias is definitely minimalist. Tags are for internal linking only.',
                 'index_skip'            => true,
         ];
 
