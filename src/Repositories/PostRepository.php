@@ -142,7 +142,7 @@ class PostRepository extends BaseRepository
     {
         return DB::table('posts')
             ->join('post_category', 'posts.id', '=', 'post_category.post_id')
-            ->select('posts.slug')
+            ->select('posts.slug', 'posts.title')
             ->where('post_category.category_id', '=', $categoryId)
             ->where('posts.enabled', '=', 1)
             ->where('posts.publish_on', '>', $publish_on)
@@ -162,7 +162,7 @@ class PostRepository extends BaseRepository
     {
         return DB::table('posts')
             ->join('post_category', 'posts.id', '=', 'post_category.post_id')
-            ->select('posts.slug')
+            ->select('posts.slug', 'posts.title')
             ->where('post_category.category_id', '=', $categoryId)
             ->where('posts.enabled', '=', 1)
             ->where('posts.publish_on', '<', $publish_on)
