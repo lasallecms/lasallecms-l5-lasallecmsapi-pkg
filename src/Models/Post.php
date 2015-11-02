@@ -425,14 +425,6 @@ class Post extends BaseModel
         }
 
         $field_list[] = [
-                'name'                 => 'id',
-                'type'                 => 'int',
-                'info'                 => false,
-                'index_skip'           => false,
-                'index_align'          => 'center',
-        ];
-
-        $field_list[] = [
                 'name'                  => 'title',
                 'type'                  => 'varchar',
                 'info'                  => 'For meta tags, so maximum length 60-70 characters.',
