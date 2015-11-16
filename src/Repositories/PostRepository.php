@@ -132,7 +132,7 @@ class PostRepository extends BaseRepository
 
 
     /**
-     * Get the next episode
+     * For single post display navigation: get the next post
      *
      * @param  int         $categoryId     The category id.
      * @param  date        $publish_on     The displayed post's publish_on date
@@ -152,7 +152,7 @@ class PostRepository extends BaseRepository
     }
 
     /**
-     * Get the previous episode
+     * For single post display navigation: get the previous post
      *
      * @param  int         $categoryId     The category id.
      * @param  date        $publish_on     The displayed post's publish_on date
