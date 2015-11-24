@@ -1584,10 +1584,12 @@ class BaseRepository
             } else {
                 $html .= $record->title;
             }
-
             $html .= '</option>"';
         }
         $html .= '</select>';
+
+        $html .= $this->renderBootstratMultiselectPlugin( $field['name'], "single", count($records) );
+
 
         return $html;
     }
@@ -1660,6 +1662,8 @@ class BaseRepository
         }
         $html .= '</select>';
 
+        $html .= $this->renderBootstratMultiselectPlugin( $field['name'], "single", count($relatedTableRecords) );
+
         return $html;
     }
 
@@ -1690,7 +1694,7 @@ class BaseRepository
 
         // Initiatize the html select tag
         $html = "";
-        $html .= '<select name="'.$field['related_table_name'].'[]" id="'.$field['related_table_name'].'" size="10" class="form-control" multiple>';
+        $html .= '<select name="'.$field['related_table_name'].'[]" id="'.$field['related_table_name'].'" size="10" class="form-control" multiple="multiple">';
 
         // Construct the <option></option> tags for ALL tags in the tags table
         foreach ($records as $record)
@@ -1703,6 +1707,8 @@ class BaseRepository
             $html .= '</option>"';
         }
         $html .= '</select>';
+
+        $html .= $this->renderBootstratMultiselectPlugin( $field['related_table_name'], "multiple", count($records) );
 
         return $html;
     }
@@ -1768,6 +1774,53 @@ class BaseRepository
             $html .= '</option>"';
         }
         $html .= '</select>';
+
+        $html .= $this->renderBootstratMultiselectPlugin( $relatedTableName, "multiple", count($relatedTableRecords) );
+
+        return $html;
+    }
+
+    /**
+     * The HTML for the Bootstrap Multiselect jQuery plugin
+     * https://github.com/davidstutz/bootstrap-multiselect
+     * params on line 393, bootstrap-multiselect/dist/js/bootstrap-multiselect.js
+     *
+     * @param   $selectid          string    The id.  <select id="$selectid" ..>
+     * @param   $singleOrMultiple  string    {single | multiple }
+     *                                       Select only one option, or select one or more options
+     * @param   $count             int       The number of options
+     * @return  string
+     */
+    private function renderBootstratMultiselectPlugin($selectid, $singleOrMultiple = "single", $count)
+    {
+        $html = '<script type="text/javascript">';
+        $html .= '$(document).ready(function() {';
+        $html .= "$('#".$selectid."').multiselect(";
+        $html .= "{";
+
+        $html .= "nonSelectedText: 'Select...',";
+        $html .= 'enableHTML: false,';
+
+        if ($count > 10) {
+            $html .= "enableFiltering: true,";
+            $html .= "enableCaseInsensitiveFiltering: false,";
+            $html .= "enableFullValueFiltering: false,";
+            $html .= "filterBehavior: 'text',";
+            $html .= "filterPlaceholder: 'Search...',";
+        }
+
+        if ($singleOrMultiple != "single") {
+            $html .= "includeSelectAllOption: true,";
+            $html .= "includeSelectAllIfMoreThan: 3,";
+            $html .= "delimiterText: ' | ',";
+        }
+
+        $html .= "buttonClass: 'btn btn-default'";
+
+        $html .= "}";
+        $html .= ");";
+        $html .= '});';
+        $html .= '</script>';
 
         return $html;
     }
