@@ -31,38 +31,55 @@ namespace Lasallecms\Lasallecmsapi\Repositories;
  *
  */
 
-/*
+/**
  * This is the common base repository for all LaSalle Software, except LaSalleMart
  */
 
 // LaSalle Software
 use Lasallecms\Helpers\Dates\DatesHelper;
 
+// LaSalle Software Traits Specific to this BaseRepository class
+use Lasallecms\Lasallecmsapi\Repositories\Traits\LockedFields;
+use Lasallecms\Lasallecmsapi\Repositories\Traits\UserGroups;
+use Lasallecms\Lasallecmsapi\Repositories\Traits\Sanitation;
+use Lasallecms\Lasallecmsapi\Repositories\Traits\Validation;
+use Lasallecms\Lasallecmsapi\Repositories\Traits\PrepareForPersist;
+use Lasallecms\Lasallecmsapi\Repositories\Traits\Persist;
+use Lasallecms\Lasallecmsapi\Repositories\Traits\RepositorySpecificHTMLHelpers;
+use Lasallecms\Lasallecmsapi\Repositories\Traits\PostUpdates;
+
 // Laravel facades
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\URL;
 
 // Laravel classes
 use Illuminate\Container\Container as Container;
-use Illuminate\Support\Str;
-
-// Third party classes
-use Carbon\Carbon;
 
 class BaseRepository
 {
+
+    // LaSalle Software Traits Specific to this BaseRepository class
+    use LockedFields;
+    use UserGroups;
+    use Sanitation;
+    use Validation;
+    use PrepareForPersist;
+    use Persist;
+    use RepositorySpecificHTMLHelpers;
+    use PostUpdates;
+
+
+
     ///////////////////////////////////////////////////////////////////
     //////////////////////       PROPERTIES       /////////////////////
     ///////////////////////////////////////////////////////////////////
 
-    /*
+    /**
      * @var Illuminate\Container\Container
      */
     protected $app;
 
-    /*
+    /**
      * @var  namespace and class of relevant model
      */
     protected $model;
@@ -72,7 +89,7 @@ class BaseRepository
     /////////////////////       CONSTRUCTOR       /////////////////////
     ///////////////////////////////////////////////////////////////////
 
-    /*
+    /**
      * Inject a new instance of the container in order to inject the relevant model.
      */
     public function __construct()
@@ -86,7 +103,7 @@ class BaseRepository
     //////////////////////    MODEL INJECTION     /////////////////////
     ///////////////////////////////////////////////////////////////////
 
-    /*
+    /**
      *
      * Inject the container, then use the container to inject the model object
      * "Resolve something out of the container"
@@ -108,7 +125,7 @@ class BaseRepository
     ////       LARAVEL MODEL METHODS IN REPOSITORY FORM       /////////
     ///////////////////////////////////////////////////////////////////
 
-    /*
+    /**
      * Return entire collection
      *
      *  @return eloquent
@@ -118,7 +135,7 @@ class BaseRepository
         return $this->model->all();
     }
 
-    /*
+    /**
      * Return specific model
      *
      * @param id         Post ID
@@ -130,7 +147,7 @@ class BaseRepository
     }
 
 
-    /*
+    /**
      * Create model
      *
      * @param  data     Input data
@@ -142,7 +159,7 @@ class BaseRepository
     }
 
 
-    /*
+    /**
      * Store model
      *
      * @param  data     Input data
@@ -155,7 +172,7 @@ class BaseRepository
     }
 
 
-    /*
+    /**
     * Save model
     *
     * @return eloquent
@@ -166,7 +183,7 @@ class BaseRepository
     }
 
 
-    /*
+    /**
     * Update model
     *
     * @param  data     array  Input data
@@ -178,7 +195,7 @@ class BaseRepository
     }
 
 
-    /*
+    /**
      * Delete a model
      *
      * @param id         Post ID
@@ -190,7 +207,7 @@ class BaseRepository
     }
 
 
-    /*
+    /**
      * Lists
      *
      * @param id         Post ID
@@ -203,7 +220,7 @@ class BaseRepository
     }
 
 
-    /*
+    /**
      * Display all the records ordered by publish_on, title, DESC
      *
      * @return collection
@@ -214,187 +231,12 @@ class BaseRepository
     }
 
 
-    ///////////////////////////////////////////////////////////////////
-    ////////////////////      USER GROUPS         /////////////////////
-    ///////////////////////////////////////////////////////////////////
-
-    /*
-     * Is the user allowed to do an action
-     *
-     * @param   string   $action   Generally: index, create, store, edit, insert, destroy
-     * @return  bool
-     */
-    public function isUserAllowed($action)
-    {
-        $this->groupIdTitle(1);
-
-        // Get the user's group.
-        // Returns array of objects.
-        $userGroups = $this->userBelongsToTheseGroups();
-
-        // Array of allowed groups from the model
-        $allowedGroups = $this->allowedGroupsForThisActionByModel($action);
-
-        // Cycle through all the allowed groups, to see if the user belongs to one of these allowed groups.
-        // One match is all it takes!
-        foreach ($allowedGroups as $allowedGroup)
-        {
-            // Cycle through all the groups the user belongs to
-            foreach ($userGroups as $userGroup)
-            {
-                //debug
-                //echo "<br>".$this->groupIdTitle($userGroup->group_id)." and ".$allowedGroup;
-                if (
-                    (strtolower($this->groupIdTitle($userGroup->group_id)))
-                    ==
-                    (strtolower($allowedGroup))
-                ) return true;
-            }
-        }
-        return false;
-    }
-
-    /*
-     * What groups does the model specify are allowed to do the controller's action.
-     * Put another way, what group can do the index() for a specific controller?
-     * This array resides in the model class.
-     *
-     * @param string   $action   A particular controller's action (method) -- just for that controller,
-     *                                                                        *NOT* generically for all controllers!
-     * @return array
-     */
-    public function allowedGroupsForThisActionByModel($action)
-    {
-        $allowedUserGroupsForAllActions = $this->model->allowed_user_groups;
-
-        //http://laravel.com/docs/4.2/helpers#arrays
-        return array_flatten( array_pluck($allowedUserGroupsForAllActions, $action) );
-    }
-
-    /*
-     * What groups does the user belong?
-     *
-     * @return object
-     */
-    public function userBelongsToTheseGroups()
-    {
-        return DB::table('user_group')->where('user_id', '=', Auth::user()->id)->get();
-    }
-
-    /*
-     * What is the title field for a given group_id, in the groups database table?
-     *
-     * @param  int   $group_id
-     * @return string
-     */
-    public function groupIdTitle($group_id)
-    {
-        return DB::table('groups')->where('id', $group_id)->value('title');
-    }
-
-
-
-    ///////////////////////////////////////////////////////////////////
-    ////////////////////      LOCK FIELDS         /////////////////////
-    ///////////////////////////////////////////////////////////////////
-
-    /*
-     * Unlock records belonging to the current user.
-     *
-     * @param  string  $tableName
-     * @return bool
-     */
-    public function unlockMyRecords($tableName)
-    {
-        $results = $this->lockedRecordsByUser($tableName, Auth::user()->id);
-
-        foreach($results as $result)
-        {
-            $this->unpopulateLockFields($result->id);
-        }
-    }
-
-    /*
-     * Collection of records that are locked by a specific user, for a specific table
-     *
-     * @param  string     $tableName
-     * @param  int        $userId
-     * @return collection
-     */
-    public function lockedRecordsByUser($tableName, $userId)
-    {
-        return DB::table($tableName)->where('locked_by', '=', $userId)->get();
-    }
-
-    /*
-     * Is the record locked?
-     * "Locked" is defined as the 'locked_by' field being populated; that is,> 0
-     *
-     * @param  int     $id
-     * @return bool
-     */
-    public function isLocked($id)
-    {
-        $record = $this->model->findOrFail($id);
-
-        if ($record->locked_by > 0) return true;
-
-        return false;
-    }
-
-    /*
-     * Populate the locked_at and locked_by fields.
-     * By definition, this must be an UPDATE
-     *
-     * All that is needed is the ID
-     *
-     * @param  int     $id
-     * @return bool
-     */
-    public function populateLockFields($id)
-    {
-        // $this->getSave($data);   --> creates new record ;-(
-        // $this->getUpdate($data); --> integrity constraint violation: 1451 Cannot delete or
-        //                              update a parent row: a foreign key constraint fails  ;-(
-        // use the model, not the repository, to UPDATE
-        $record = $this->model->findOrFail($id);
-
-        $record->locked_by = Auth::user()->id;
-        $record->locked_at = date('Y-m-d H:i:s');
-
-        return $record->save();
-    }
-
-    /*
-     * Un-populate the locked_at and locked_by fields.
-     * By definition, this must be an UPDATE
-     *
-     * All that is needed is the ID
-     *
-     * @param  int     $id
-     * @return mixed(?)
-     */
-    public function unpopulateLockFields($id)
-    {
-        // $this->getSave($data);   --> creates new record ;-(
-        // $this->getUpdate($data); --> integrity constraint violation: 1451 Cannot delete or
-        //                              update a parent row: a foreign key constraint fails  ;-(
-        // use the model, not the repository, to UPDATE
-        $record = $this->model->findOrFail($id);
-
-        // Locked by field allowed to be null
-        $record->locked_by = null;
-        $record->locked_at = null;
-
-        return $record->save();
-    }
-
 
     ///////////////////////////////////////////////////////////////////
     //////////////     Foreign Key Constraint       ///////////////////
     ///////////////////////////////////////////////////////////////////
 
-    /*
+    /**
      * Is a table record used in another table?
      *
      * For Lookup Tables
@@ -408,7 +250,7 @@ class BaseRepository
     }
 
 
-    /*
+    /**
      * A related table can be optional. For example, the PEOPLES table: a person does not have to
      * be a LaSalle Software user that can login. In fact, it is preferable to *not* make every
      * person in the CRM database an actual user. MySQL allows for the option to relate, or not, relate
@@ -462,7 +304,7 @@ class BaseRepository
     //////////////          DO NOT DELETE           ///////////////////
     ///////////////////////////////////////////////////////////////////
 
-    /*
+    /**
      * Is this record *NOT* supposed to be deleted?
      *
      * @param   int  $id  Lookup Table ID
@@ -481,1428 +323,12 @@ class BaseRepository
     }
 
 
-    ///////////////////////////////////////////////////////////////////
-    ///////////////////////////  SANITATION   /////////////////////////
-    ///////////////////////////////////////////////////////////////////
-    /*
-     * Get sanitation array for INSERT from model
-     *
-     * @return array
-     */
-    public function getSanitationRulesForCreate()
-    {
-        return $this->model->sanitationRulesForCreate;
-    }
-
-    /*
-     * Get sanitation array for UPDATE from model
-     *
-     * @return array
-     */
-    public function getSanitationRulesForUpdate()
-    {
-        return $this->model->sanitationRulesForUpdate;
-    }
-
-    /*
-     * For Lookup Tables
-     *
-     * Get sanitation array for INSERT from model
-     *
-     * @return array
-     */
-    public function getLookupTablesSanitationRulesForCreate()
-    {
-        return [
-            'title'            => 'trim|strip_tags',
-            'description'      => 'trim',
-        ];
-    }
-
-    /*
-     * For Lookup Tables
-     *
-     * Get sanitation array for UPDATE from model
-     *
-     * @return array
-     */
-    public function getLookupTablesSanitationRulesForUpdate()
-    {
-        return [
-            'title'            => 'trim|strip_tags',
-            'description'      => 'trim',
-        ];
-    }
-
-    /*
-     * Sanitize
-     *
-     * @param  array  $data
-     * @param  array  $rules
-     * @return array
-     */
-    public function getSanitize($data, $rules)
-    {
-        // iterate through each field
-        foreach ($rules as $field => $rule)
-        {
-            // turn the listing of rules with a "|" separator into an array
-            // yeah, $rule can contain multiple rules (ie, multiple php functions)
-            $phpFunctions = explode('|', $rule);
-
-            // iterate through each rule
-            foreach($phpFunctions as $phpFunction)
-            {
-                $data[$field] = call_user_func_array($phpFunction, [$data[$field] ]);
-
-                // debug
-                //echo "<br>The field ".$field." is now = ".$data[$field]." (".$singleFunction.")";
-            }
-        }
-
-        return $data;
-    }
-
-
-    ///////////////////////////////////////////////////////////////////
-    ///////////////////////////  VALIDATION   /////////////////////////
-    ///////////////////////////////////////////////////////////////////
-    /*
-     * Get validation array for INSERT from model
-     *
-     * @return array
-     */
-    public function getValidationRulesForCreate()
-    {
-        return $this->model->validationRulesForCreate;
-    }
-
-    /*
-     * Get validation array for UPDATE from model
-     *
-     * @return array
-     */
-    public function getValidationRulesForUpdate()
-    {
-        return $this->model->validationRulesForUpdate;
-    }
-
-
-    /*
-     * For Lookup Tables
-     *
-     * Get validation array for INSERT from model
-     *
-     * @return array
-     */
-    public function getLookupTablesValidationRulesForCreate()
-    {
-        return [
-            'title'            => 'required|min:4|unique:'.$this->model->table,
-            'description'      => 'min:4',
-            'enabled'          => 'boolean',
-        ];
-    }
-
-    /*
-     * For Lookup Tables
-     *
-     * Get validation array for UPDATE from model
-     *
-     * @return array
-     */
-    public function getLookupTablesValidationRulesForUpdate()
-    {
-        return [
-            'title'            => 'required|min:4',
-            'description'      => 'min:4',
-            'enabled'          => 'boolean',
-        ];
-    }
-
-
-
-    ///////////////////////////////////////////////////////////////////
-    ////////////////    PREPARE FOR PERSIST     ///////////////////////
-    ///////////////////////////////////////////////////////////////////
-
-    /*
-     * Prepare input data for save
-     *
-     * Basically ignoring the sanitizing that has already been applied, in the interests
-     * of being thorough
-     *
-     * @param  array   $data  The sanitized input data array
-     * @return array
-     */
-    public function washDataForPersist($data)
-    {
-        $fields = $data['field_list'];
-
-        foreach ($fields as $field)
-        {
-            // If the "persist_wash" element is empty, then give it a value so the IF statements in this method work
-            if ( empty($field['persist_wash']) ) $field['persist_wash'] = "empty";
-
-            // Not all title fields are of type "varchar"
-            if ( (($field['name'] == "title") && ($field['type'] == "varchar") ) || ($field['persist_wash'] == "title"))
-            {
-                $data[$field['name']] = $this->prepareTitleForPersist($data[$field['name']]);
-            }
-
-            if ( $field['name'] == "slug" )
-            {
-                // we need to send over the record ID (basically, the posts ID) to properly determine if this slug exists
-                if (empty($data['id'])) $data['id'] = false;
-
-                $data['slug'] = $this->prepareSlugForPersist($data['title'], $data['slug'], $data['id']);
-            }
-
-            if ( $field['name'] == "canonical_url" )
-            {
-                $data['canonical_url'] = $this->prepareCanonicalURLForPersist($data['slug']);
-            }
-
-
-            // The way things have evolved towards version 1.0, the "URL" type does not get pre-washed for persist.
-            // The reason is that, after all, want to just use the URL in a title field, so do *not* want "http://"
-            //
-            // However, whilst putting my Knowledge Base package together, I do need the URL wash. So... what
-            // I am doing is creating a "persist_wash" called "link", which actually performs the needed "prepareURLForPersist".
-            // The prepareURLForPersis method is on line 890 (ish!)
-            if (( $field['name'] == "url" ) || ($field['persist_wash'] == "url"))
-            {
-                // Ok, not actually doing this pre-wash.
-                //$data[$field['name']] = $this->prepareURLForPersist($data[$field['name']]);
-            }
-            if (( $field['name'] == "link" ) || ($field['persist_wash'] == "link"))
-            {
-                // yes, definitely doing this pre-wash!
-                $data[$field['name']] = $this->prepareURLForPersist($data[$field['name']]);
-            }
-
-
-            if (( $field['name'] == "content") || ($field['persist_wash'] == "content"))
-            {
-                $data[$field['name']] = $this->prepareContentForPersist($data[$field['name']]);
-            }
-
-            if (($field['name'] == "description") || ($field['persist_wash'] == "description"))
-            {
-                $data[$field['name']] = $this->prepareDescriptionForPersist($data[$field['name']]);
-            }
-
-            if ( $field['name'] == "excerpt" )
-            {
-                $data['excerpt'] = $this->prepareExcerptForPersist($data['excerpt'], $data['content']);
-            }
-
-            if ($field['name'] == "meta_description")
-            {
-                $data['meta_description'] = $this->prepareMetaDescriptionForPersist($data['meta_description'], $data['excerpt']);
-            }
-
-            if ( $field['name'] == "featured_image" )
-            {
-                $data['featured_image'] = $this->prepareFeaturedImageForPersist($data['featured_image']);
-            }
-
-            if (($field['name'] == "enabled") || ($field['persist_wash'] == "enabled"))
-            {
-                $data[$field['name']] = $this->prepareEnabledForPersist($data[$field['name']]);
-            }
-
-            // publish_on is a not nullable field
-            if (($field['name'] == "publish_on") || ($field['persist_wash'] == "publish_on"))
-            {
-                $data[$field['name']] = $this->preparePublishOnForPersist($data[$field['name']]);
-            }
-
-            // birthday is nullable!
-            // publish_on is a not nullable field
-            if (($field['name'] == "birthday") || ($field['persist_wash'] == "birthday"))
-            {
-                $data[$field['name']] = $this->prepareBirthdayForPersist($data[$field['name']]);
-            }
-
-
-            if (($field['name'] == "email") || ($field['persist_wash'] == "email") || ($field['type'] == "email") )
-            {
-                $data[$field['name']] = $this->prepareEmailForPersist($data[$field['name']]);
-            }
-
-            if (($field['name'] == "composite_title") || ($field['type'] == "composite_title"))
-            {
-                $data[$field['name']] = $this->prepareCompositeTitleForPersist($field['fields_to_concatenate'], $data);
-            }
-
-            if ($field['type'] == "related_table")
-            {
-                $data[$field['name']] = $this->prepareRelatedTableForPersist($field, $data[$field['name']]);
-            }
-        }
-
-        if ($data['crud_action'] == "create")
-        {
-            $data['created_at'] = Carbon::now();
-            $data['created_by'] = Auth::user()->id;
-
-            $data['updated_at'] = Carbon::now();
-            $data['updated_by'] = Auth::user()->id;
-
-        } else {
-            //blank
-        }
-
-        return $data;
-    }
-
-    /*
-     * Transform title for persist.
-     *
-     * @param  text  $title
-     * @return text
-     */
-    public function prepareTitleForPersist($title)
-    {
-        // Strip whitespace (or other characters) from the beginning and end of a string
-        $transformedTitle = trim($title);
-
-        // Strip HTML and PHP tags from a string
-        $transformedTitle = strip_tags($transformedTitle);
-
-        // Strip tags, optionally strip or encode special characters
-        // http://php.net/manual/en/filter.filters.sanitize.php
-        $transformedTitle = filter_var($transformedTitle, FILTER_SANITIZE_STRING);
-
-        // Uppercase the first character of each word in a string
-        $transformedTitle = ucwords($transformedTitle);
-
-        return $transformedTitle;
-    }
-
-    /*
-     * Transform description for persist.
-     *
-     * @param  string  $descriptions
-     * @return text
-     */
-    public function prepareDescriptionForPersist($description)
-    {
-        $description = html_entity_decode($description);
-        $description = strip_tags($description);
-        $description = filter_var($description, FILTER_SANITIZE_STRING);
-
-        // remove the encoded blank chars
-        $description = str_replace("\xc2\xa0",'',$description);
-
-        $description = trim($description);
-        return $description;
-    }
-
-    /**
-     * Prepare slug for persist.
-     *
-     * @param  text  $title
-     * @param  text  $slug
-     * @param  int   $id        The id of the record (eg, of the posts table) that is currently being edited
-     * @return text
-     */
-    public function prepareSlugForPersist($title, $slug, $id=false)
-    {
-        $separator = '-';
-
-        if ($slug == "")
-        {
-            // No slug.. so this is a "create" form; or, the slug was deleted accidentally and so needs to be regenerated
-
-            // Convert all dashes/underscores into separator
-            $flip = $separator == '-' ? '_' : '-';
-
-            // wash the title
-            $title = html_entity_decode($title);
-            $title = strip_tags($title);
-            $title = filter_var($title, FILTER_SANITIZE_STRING);
-            // remove the encoded blank chars
-            $title = str_replace("\xc2\xa0",'',$title);
-            // remove encoded apostrophe
-            $title = str_replace("&#39;",'',$title);
-            $title = trim($title);
-
-            $slug = preg_replace('!['.preg_quote($flip).']+!u', $separator, $title);
-
-            // Remove all characters that are not the separator, letters, numbers, or whitespace.
-            $slug = preg_replace('![^'.preg_quote($separator).'\pL\pN\s]+!u', '', mb_strtolower($slug));
-
-            // Replace all separator characters and whitespace by a single separator
-            $slug = preg_replace('!['.preg_quote($separator).'\s]+!u', $separator, $slug);
-
-            // well, is another record using this slug already? Let's return a record count, so we can use the count number...
-            $rowCount = $this->doesSlugAlreadyExist($slug);
-
-            if ($rowCount > 0)
-            {
-                // yes, this slug does exist already, so let's append this slug to make it different from what already exists.
-                ++$rowCount;
-                return $slug.$rowCount;
-            }
-
-            // no, this slug does not yet exist, so let's use it as-is...
-            return $slug;
-        }
-
-
-        // Ah, so a slug was entered. So coming from an "edit" form...
-
-        // remove the encoded blank chars
-        $slug = str_replace("\xc2\xa0",'',$slug);
-
-        // remove encoded apostrophe
-        $slug = str_replace("&#39;",'',$slug);
-
-        $slug = trim($slug);
-        $slug = strtolower($slug);
-        $slug = strip_tags($slug);
-        $slug = preg_replace('!['.preg_quote($separator).'\s]+!u', $separator, $slug);
-
-
-        // if this slug is a different slug manually entered into the edit form, then process it further
-        if (!$this->isManuallyChangedSlugInEditForm($slug, $id)) {
-            return $slug;
-        }
-
-        // so this slug does belong to the existing ID, but is different than the slug in the database...
-
-        // well, is another record using this slug already? Let's return a record count, so we can use the count number...
-        $rowCount = $this->doesSlugAlreadyExist($slug);
-
-        if ($rowCount > 0)
-        {
-            // yes, this slug does exist already, so let's append this slug to make it different from what already exists.
-            ++$rowCount;
-            return $slug.$rowCount;
-        }
-
-        // no, this slug does not yet exist, so let's use it as-is...
-        return $slug;
-    }
-
-
-    /**
-     * Was the slug changed in the edit form?
-     *
-     * @param  text  $slug
-     * @param  int   $id        The id of the record (eg, of the posts table) that is currently being edited
-     * @return bool
-     */
-    public function isManuallyChangedSlugInEditForm($slug, $id=false)
-    {
-        // If there is no $id, then there's nothing to figure out!
-        if (!$id) return false;
-
-        $record = DB::table($this->model->table)
-            ->where('id', $id)
-            ->first()
-        ;
-
-        if ($record->slug == $slug) {
-
-            // The slug entered into the form is the same slug that is already in the database, so no change...
-            return false;
-
-        } else {
-
-            // The slug entered into the form is different than the slug in the database, so yes it has changed...
-            return true;
-        }
-    }
-
-
-    /**
-     * Does the slug already exist in the table?
-     *
-     * @param  text  $slug
-     * @return int
-     */
-    public function doesSlugAlreadyExist($slug)
-    {
-        $rowCount = DB::table($this->model->table)
-            ->where('slug',  $slug)
-            ->count();
-
-        if ($rowCount > 0) return $rowCount;
-        return 0;
-    }
-
-    /*
-     * Transform canonical_url for persist.
-     *
-     * @param  text  $slug
-     * @return text
-     */
-    public function prepareCanonicalURLForPersist($slug)
-    {
-        $baseURL = rtrim(config('app.url'), "/");
-
-        if ($this->model->table == "posts") $type = "blog";
-
-
-        // July 15, 2015: do *NOT* want type!
-
-        //return $baseURL.'/'.$type.'/'.$slug;
-        return $baseURL.'/'.$slug;
-    }
-
-
-    /*
-     * Wash URL for persist.
-     *
-     * Does *not* test for a .com or .ca or other TLD
-     *
-     * @param  text  $url
-     * @return text
-     */
-    public function prepareURLForPersist($url)
-    {
-        if (substr($url, 0, 7 ) == "http://") return $url;
-
-        if (substr($url, 0, 8 ) == "https://") return $url;
-
-        $washedUrl  = "http://";
-        $washedUrl .= $url;
-
-        return $url;
-    }
-
-
-    /*
-     * Transform content for persist.
-     *
-     * @param  text  $content
-     * @return text
-     */
-    public function prepareContentForPersist($content)
-    {
-        $transformedContent = trim($content);
-        return $transformedContent;
-    }
-
-    /*
-     * Transform excerpt for persist.
-     *
-     * @param  text  $excerpt
-     * @return text
-     */
-    public function prepareExcerptForPersist($excerpt="", $content)
-    {
-        $chars_to_excerpt = config('lasallecmsapi.how_many_initial_chars_of_content_field_for_excerpt');
-
-        if ($excerpt == "")
-        {
-            $excerpt = $content;
-
-            $excerpt = html_entity_decode($excerpt);
-            $excerpt = strip_tags($excerpt);
-            $excerpt = filter_var($excerpt, FILTER_SANITIZE_STRING);
-
-            // remove the encoded blank chars
-            $excerpt = str_replace("\xc2\xa0",'',$excerpt);
-
-            $excerpt = trim($excerpt);
-            $excerpt = mb_substr($excerpt, 0, $chars_to_excerpt).config('lasallecmsapi.append_excerpt_with_this_string');
-            return $excerpt;
-        }
-
-        $excerpt = html_entity_decode($excerpt);
-        $excerpt = strip_tags($excerpt);
-        $excerpt = filter_var($excerpt, FILTER_SANITIZE_STRING);
-
-        // remove the encoded blank chars
-        $excerpt = str_replace("\xc2\xa0",'',$excerpt);
-
-        $excerpt = trim($excerpt);
-        $excerpt.config('lasallecmsapi.append_excerpt_with_this_string');
-
-        return $excerpt;
-    }
-
-    /*
-     * Transform meta_description for persist.
-     *
-     * @param  text  $meta_description
-     * @param  text  $excerpt
-     * @return text
-     */
-    public function prepareMetaDescriptionForPersist($meta_description="", $excerpt)
-    {
-        if ($meta_description == "") return $excerpt;
-
-        $meta_description = html_entity_decode($meta_description);
-        $meta_description = strip_tags($meta_description);
-        $meta_description = filter_var($meta_description, FILTER_SANITIZE_STRING);
-
-        // remove the encoded blank chars
-        $excerpt = str_replace("\xc2\xa0",'',$excerpt);
-
-        $excerpt = trim($excerpt);
-        return $meta_description;
-    }
-
-    /*
-     * Transform featured_image for persist.
-     *
-     * @param  text  $featured_image
-     * @return text
-     */
-    public function prepareFeaturedImageForPersist($featured_image)
-    {
-        return $featured_image;
-    }
-
-    /*
-     * Transform enabled for persist.
-     *
-     * @param  bool  $enabled
-     * @return bool
-     */
-    public function prepareEnabledForPersist($enabled) {
-        if (($enabled == "") || $enabled == 0) return 0;
-        return 1;
-    }
-
-    /*
-     * Transform publish_on for persist.
-     *
-     * This is *NOT* a NULLABLE field, so we canNOT return "null".
-     *
-     * @param  datetime  $publish_on
-     * @return datetime
-     */
-    public function preparePublishOnForPersist($publish_on)
-    {
-        if
-        (
-            ($publish_on == "0000-00-00 00:00:00")
-            || ($publish_on == "")
-            || ($publish_on == "-0001-11-30 00:00:00")
-        )
-        {
-            // "use Carbon\Carbon"
-            return Carbon::now();
-        }
-
-        return $publish_on;
-    }
-
-    /*
-     * Transform birthday for persist.
-     *
-     * This is a NULLABLE field, so we can return "null".
-     *
-     * @param  datetime  $birthdate
-     * @return datetime
-     */
-    public function prepareBirthdayForPersist($birthdate)
-    {
-        if
-        (
-            ($birthdate == "0000-00-00 00:00:00")
-            || ($birthdate == "")
-            || ($birthdate == "-0001-11-30 00:00:00")
-            || (!$birthdate)
-        )
-        {
-            // the date field is nullable, so return null
-            return null;
-        }
-
-        return $birthdate;
-    }
-
-    /*
-     * Transform emailn for persist.
-     *
-     * @param  string   $email
-     * @return email
-     */
-    public function prepareEmailForPersist($email)
-    {
-        // leaving this code here for reference only
-
-        // http://stackoverflow.com/questions/7290674/php-is-filter-sanitize-email-pointless
-
-        /*
-        $clean_email = filter_var($email,FILTER_SANITIZE_EMAIL);
-
-        if ($email == $clean_email && filter_var($email,FILTER_VALIDATE_EMAIL))
-        {
-            // blank on purpose
-        }
-        */
-
-        return $email;
-    }
-
-    /*
-     * Concatenate fields for the composite Title field
-     *
-     * @param  array    $fieldsToConcatenate
-     * @param  array    $data
-     * @return string
-     */
-    public function prepareCompositeTitleForPersist($fieldsToConcatenate, $data)
-    {
-        $composite_title = "";
-
-        // count to determine spacing between fields
-        $count = count($fieldsToConcatenate);
-        $i = 1;
-
-
-        foreach ($fieldsToConcatenate as $fieldToConcatenate)
-        {
-            // If the field is blank, then skip the concatenation.
-            // Eg: The field "street2" is blank
-            if (($data[$fieldToConcatenate] == "") || (!$data[$fieldToConcatenate]) || (empty($data[$fieldToConcatenate])))
-            {
-                // blank on purpose --> yeah, I'm leaving it this way 'cause three months from now I'll actually
-                //                      understand what I was thinking on the wrong side of midnight on May 27th, 2015!
-
-            } else {
-
-                $composite_title .= $data[$fieldToConcatenate];
-
-                if ($i < $count) $composite_title .= " ";
-            }
-        }
-        return $composite_title;
-    }
-
-    /*
-     * Prepare foreign key field for persist.
-     *
-     * This is for "one" relationships only, where there is an actual field for the
-     * related table's ID in the primary table.
-     *
-     * Basically, the purpose here is to set the data to "null" when there is no value, and
-     * the field is nullable.
-     *
-     * @param  array    $fields
-     * @param  array    $data
-     * @return mixed
-     */
-    public function prepareRelatedTableForPersist($field, $data)
-    {
-        // If the field is nullable, then having associated records is optional.
-        if (
-            ( ($data == "")   ||
-              ($data == null) ||
-              (!$data)        ||
-              (empty($data)) )
-            &&
-            ($field['nullable'])
-        )
-        {
-            $data = null;
-        }
-
-        return $data;
-    }
-
-
-    ///////////////////////////////////////////////////////////////////
-    ////////////         PERSIST: CREATE/INSERT           /////////////
-    ///////////////////////////////////////////////////////////////////
-
-    /*
-         * Create (INSERT) Record
-         *
-         * @param  array  $data
-         * @return bool
-         */
-    public function createRecord($data)
-    {
-        $modelInstance = new $this->model;
-
-        $field_list = $data['field_list'];
-        foreach ($field_list as $field)
-        {
-            // Ignore primary ID field for INSERT as created during said INSERT
-            if ($field['name'] == "id") continue;
-
-            // Special handling for password fields
-            if ($field['type'] == "password")
-            {
-                $modelInstance->$field['name'] = bcrypt($data[$field['name']]);
-                continue;
-            }
-
-            // Special handling for the composite_title field
-            if ($field['name'] == "composite_title")
-            {
-                $modelInstance->title = $data[$field['name']];
-                continue;
-            }
-
-
-            // Related tables with pivot tables; that is, with one-to-many or many-to-many relationships
-            // have their own save routine, since the relationships are stored in a separate database table
-            // Note: empty 'related_pivot_table' in the field list produces exception error. Only 'related_table"
-            //       type has this 'related_pivot_table' array element
-            if ( !empty($field['related_pivot_table']))
-            {
-                if (($field['type'] == "related_table") && ($field['related_pivot_table'] == "true"))  continue;
-            }
-
-            $modelInstance->$field['name'] = $data[$field['name']];
-        }
-
-        // Assign data to the standard database fields
-        $modelInstance->created_at       = $data['created_at'] = Carbon::now();
-        $modelInstance->created_by       = $data['created_by'] = Auth::user()->id;
-
-        $modelInstance->updated_at       = $data['updated_at'] = Carbon::now();
-        $modelInstance->updated_by       = $data['updated_by'] = Auth::user()->id;
-
-        // INSERT!
-        $saveWentOk = $modelInstance->save();
-
-        // If the save to the database table went ok, then let's INSERT related IDs into the pivot tables,
-        if ($saveWentOk)
-        {
-
-            // Iterate through the field list to identify possible table relationships that use pivot database tables
-            foreach ($field_list as $field)
-            {
-                if (($field['type'] == "related_table") && (!empty($field['related_pivot_table'])))
-                {
-                    // If the field is nullable, then having associated records is optional.
-                    if (
-                        ( ($data == "")   ||
-                          ($data == null) ||
-                          (!$data)        ||
-                          (empty($data)) )
-                        &&
-                          ($field['nullable'])
-                        )
-                    {
-                        // blank on purpose... do not add records to the pivot table;
-
-                    } else {
-                        // INSERT into the pivot table
-                        $this->associateRelatedRecordsToNewRecord(
-                            $modelInstance,
-                            $data[$field['name']],
-                            $field['related_namespace'],
-                            $field['related_model_class']
-                        );
-                    }
-                }
-            }
-            return true;
-        }
-
-        return false;
-    }
-
-
-    /*
-    * Associate each related record with the record just created
-    *
-    * @param  object    $modelInstance       object just created
-    * @param  array     $associatedRecords   array of id's associated with the record just created
-    * @param  string    $relatedNamespace    Namespace of the associated model
-    * @param  string    $relatedModelClass   Class of the associated model
-    * @return void
-    */
-    public function associateRelatedRecordsToNewRecord($modelInstance, $associatedRecords, $relatedNamespace, $relatedModelClass)
-    {
-        // Check if there are any records to insert into the pivot table
-        if (count($associatedRecords) > 0)
-        {
-            // What is the namespace.class of the related table?
-            $namespaceModelclass = $relatedNamespace . "\\". $relatedModelClass;
-
-            // We need the repository of the related table (model?!). That repository is... well, it is
-            // this repository class: the base repository class! We need a new instance with the related model.
-            // So, create the new base repository instance...
-            $relatedRepository = new BaseRepository();
-
-            /// ... and inject the related model class into it
-            $relatedRepository->injectModelIntoRepository($namespaceModelclass);
-
-
-            // For the purpose of saving to the pivot table, we need the method name of the related model as
-            // it is in the model. As the method would be capitalized, let's un-capitalize it
-            $relatedMethod = strtolower($relatedModelClass);
-
-            // for each record that needs to be INSERTed into the pivot table
-            foreach ($associatedRecords as $associatedRecordId)
-            {
-                // get the record in the related table, so we can use the info to save to the pivot table
-                $associatedRecord = $relatedRepository->getFind($associatedRecordId);
-
-                // save to the pivot table
-                $modelInstance->$relatedMethod()->save($associatedRecord);
-            }
-        }
-    }
-
-
-
-    ///////////////////////////////////////////////////////////////////
-    ////////////            PERSIST: UPDATE               /////////////
-    ///////////////////////////////////////////////////////////////////
-
-    /*
-     * UPDATE
-     *
-     * @param  array  $data
-     * @return bool
-     */
-    public function updateRecord($data)
-    {
-        $modelInstance = $this->getFind($data['id']);
-
-        $field_list = $data['field_list'];
-        foreach ($field_list as $field)
-        {
-            // Special handling for password fields
-            if ($field['type'] == "password")
-            {
-                $modelInstance->$field['name'] = bcrypt($data[$field['name']]);
-                continue;
-            }
-
-            // Special handling for the composite_title field
-            if ($field['name'] == "composite_title")
-            {
-                $modelInstance->title = $data[$field['name']];
-                continue;
-            }
-
-
-            // Related tables with pivot tables; that is, with one-to-many or many-to-many relationships
-            // have their own save routine, since the relationships are stored in a separate database table
-            // Note: empty 'related_pivot_table' in the field list produces exception error. Only 'related_table"
-            //       type has this 'related_pivot_table' array element
-            if ( !empty($field['related_pivot_table']))
-            {
-                if (($field['type'] == "related_table") && ($field['related_pivot_table'] == "true"))  continue;
-            }
-
-            $modelInstance->$field['name'] = $data[$field['name']];
-        }
-
-        // Assign data to the standard database fields
-        $modelInstance->updated_at       = $data['updated_at'] = Carbon::now();
-        $modelInstance->updated_by       = $data['updated_by'] = Auth::user()->id;
-
-        $saveWentOk = $modelInstance->save();
-
-        // If the save to the database table went ok, then let's UPDATE/INSERT related IDs into the pivot tables,
-        if ($saveWentOk)
-        {
-            // Iterate through the field list to identify possible table relationships that use pivot database tables
-            foreach ($field_list as $field)
-            {
-                if (($field['type'] == "related_table") && ($field['related_pivot_table']))
-                {
-                    // If the field is nullable, then having associated records is optional.
-                    if (
-                        ( ($data == "")   ||
-                            ($data == null) ||
-                            (!$data)        ||
-                            (empty($data)) )
-                        &&
-                        ($field['nullable'])
-                    )
-                    {
-                        // blank on purpose... do not add records to the pivot table;
-                    } else {
-                        // INSERT into the pivot table
-                        $this->associateRelatedRecordsToUpdatedRecord(
-                            $modelInstance,
-                            $data[$field['name']],
-                            $field['related_model_class']
-                        );
-                    }
-                }
-            }
-            return true;
-        }
-
-        return false;
-    }
-
-
-    /*
-    * Associate each related record with the record just updated.
-    *
-    * @param  object    $modelInstance       object just updated
-    * @param  array     $associatedRecords   array of id's associated with the record just updated
-    * @param  string    $relatedNamespace    Namespace of the associated model
-    * @param  string    $relatedModelClass   Class of the associated model
-    * @return void
-    */
-    public function associateRelatedRecordsToUpdatedRecord($modelInstance, $associatedRecords, $relatedModelClass)
-    {
-        // Check if there are any records to sync with the pivot table
-        if (count($associatedRecords) > 0)
-        {
-            // There's probably a function for this, but for now:
-            //  (i)  create an array of the related IDs
-            //  (ii) detach the existing tag IDs and attach the new tag IDs, by using SYNC
-
-            //  (i)  create an array of the related IDs
-            $newIds = array();
-            foreach ($associatedRecords as $associatedId)
-            {
-                $newIds[] = $associatedId;
-            }
-
-            // For the purpose of saving to the pivot table, we need the method name of the related model as
-            // it is in the model. As the method would be capitalized, let's un-capitalize it
-            $relatedMethod = strtolower($relatedModelClass);
-
-            // (ii) detach the existing tag IDs and attach the new tag IDs, by using SYNC
-            $modelInstance->$relatedMethod()->sync($newIds);
-        }
-    }
-
-
-    ///////////////////////////////////////////////////////////////////
-    ////////////            PERSIST: DELETE               /////////////
-    ///////////////////////////////////////////////////////////////////
-
-    /*
-     * DELETE
-     *
-     * @param  int  $id
-     * @return bool
-     */
-    public function destroyRecord($id)
-    {
-        return $this->getDestroy($id);
-    }
-
-
-
-    ///////////////////////////////////////////////////////////////////
-    ////////////         HTML DROPDOWNS METHODS           /////////////
-    ///////////////////////////////////////////////////////////////////
-
-    /*
-     * Determine which of these four SELECT forms to render:
-     *  * single select from related table for create
-     *  * single select from related table, with existing select, for update
-     *
-     *  * multiple selects from related table for create
-     *  * multiple selects from related table, with existing selects, for update
-     *
-     * Called from blade template files.
-     *
-     * @param  array   $field                Primary table's Field array
-     * @param  string  $action               Create or update
-     * @param  int     $id                   Id of primary table
-     *
-     * @return void
-     */
-    public function determineSelectFormFieldToRenderFromRelatedTable($field, $action, $id=null )
-    {
-        if ($action == "create")
-        {
-            // related_pivot_table == false ==> one-to-one relationship, therefore "single"!
-            if (empty($field['related_pivot_table']))
-            {
-                return $this->singleSelectFromRelatedTableCreate($field);
-
-            } else {
-                return $this->multipleSelectFromRelatedTableCreate($field);
-            }
-        }
-
-        // action = "update"
-
-        // related_pivot_table == false ==> one-to-one relationship, therefore "single"!
-        if (!$field['related_pivot_table'])
-        {
-            return $this->singleSelectFromRelatedTableUpdate($field, $id);
-
-        } else {
-            return $this->multipleSelectFromRelatedTableUpdate($field['related_table_name'], $field['related_model_class'], $id);
-        }
-    }
-
-    /*
-     * Construct a dropdown with multiple selects from the related table.
-     *
-     * YES, THIS WOULD NORMALLY BE IN MY HELPERS PACKAGE, BUT THE "EDIT" VERSION BELOW
-     * NEEDS THE REPOSITORY. I WANT TO KEEP THE "CREATE" AND "EDIT" METHODS TOGETHER
-     *
-     * @param  array   $field         Field array
-     * @return string
-     */
-    public function singleSelectFromRelatedTableCreate($field)
-    {
-        // Get the records
-        $records = $this->selectOptionWhereClauseEnabledField($field['related_table_name']);
-
-    if (empty($records))
-        {
-            $html  = '<div class="alert alert-warning" role="alert">';
-
-            if ($field['alternate_form_name'])
-            {
-                $modelName = $field['alternate_form_name'];
-            } else {
-                $modelName = $field['related_model_class'];
-            }
-
-            $html .= "<strong>There are no ".strtolower($modelName)." records to associate with. </strong>";
-            $html .= '</div>';
-
-            return $html;
-        }
-
-
-        // Initiatize the html select tag
-        $html = "";
-        $html .= '<select name="'.$field['name'].'" id="'.$field['name'].'" size="10" class="form-control">';
-
-        // Construct the <option></option> tags for ALL tags in the tags table
-        foreach ($records as $record)
-        {
-            $html .= '<option ';
-            $html .= 'value="';
-            $html .= $record->id;
-            $html .= '">';
-
-            if ($field['related_table_name'] == "users")
-            {
-                $html .= $record->name;
-            } else {
-                $html .= $record->title;
-            }
-            $html .= '</option>"';
-        }
-        $html .= '</select>';
-
-        $html .= $this->renderBootstratMultiselectPlugin( $field['name'], "single", count($records) );
-
-
-        return $html;
-    }
-
-    /*
-     * Construct a dropdown with multiple selects from the related table,
-     * highlighting what is already selected.
-     *
-     * YES, THIS WOULD NORMALLY BE IN MY HELPERS PACKAGE, BUT THE "CREATE" VERSION ABOVE
-     * NEEDS THE REPOSITORY. I WANT TO KEEP THE "CREATE" AND "EDIT" METHODS TOGETHER
-     *
-     * @param  array   $field         Field array
-     * @param  int     $id            Id of primary table
-     * @return string
-     */
-    public function singleSelectFromRelatedTableUpdate($field, $id)
-    {
-        // Get the related records
-        $relatedTableRecords = $this->selectOptionWhereClauseEnabledField($field['related_table_name']);
-
-
-        if (empty($relatedTableRecords))
-        {
-            $html  = '<div class="alert alert-warning" role="alert">';
-
-            if ($field['alternate_form_name'])
-            {
-                $modelName = $field['alternate_form_name'];
-            } else {
-                $modelName = $field['related_model_class'];
-            }
-
-            $html .= "<strong>There are no ".strtolower($modelName)." records to associate with. </strong>";
-            $html .= '</div>';
-
-            return $html;
-        }
-
-        $selectedIdOFTheRelatedTable =  $this->getFind($id);
-
-        // Initiatize the html select tag
-        $html = "";
-        $html .= '<select name="'.$field['name'].'" id="'.$field['name'].'" size="10" class="form-control">';
-
-        // Construct the <option></option> tags for ALL tags in the tags table
-        foreach ($relatedTableRecords as $relatedTableRecord)
-        {
-            // If this related record is attached to the primary record, then SELECTED it
-            if ( $selectedIdOFTheRelatedTable->$field['name'] == $relatedTableRecord->id)
-            {
-                $selected = ' selected="selected" ';
-            } else {
-                $selected = "";
-            }
-
-            $html .= '<option ';
-            $html .= $selected;
-            $html .= 'value="';
-            $html .= $relatedTableRecord->id;
-            $html .= '">';
-
-            if ($field['related_table_name'] == "users")
-            {
-                $html .= $relatedTableRecord->name;
-            } else {
-                $html .= $relatedTableRecord->title;
-            }
-
-            $html .= '</option>"';
-        }
-        $html .= '</select>';
-
-        $html .= $this->renderBootstratMultiselectPlugin( $field['name'], "single", count($relatedTableRecords) );
-
-        return $html;
-    }
-
-
-
-    /*
-     * Construct a dropdown with multiple selects from the related table.
-     *
-     * YES, THIS WOULD NORMALLY BE IN MY HELPERS PACKAGE, BUT THE "EDIT" VERSION BELOW
-     * NEEDS THE REPOSITORY. I WANT TO KEEP THE "CREATE" AND "EDIT" METHODS TOGETHER
-     *
-     * @param  array    $field         Field array
-     * @return string
-     */
-    public function multipleSelectFromRelatedTableCreate($field)
-    {
-        // Get the records
-        $records = $this->selectOptionWhereClauseEnabledField($field['related_table_name']);
-
-        if (empty($records))
-        {
-            $html  = '<div class="alert alert-warning" role="alert">';
-            $html .= "<strong>There are no ".strtolower($field['related_model_class'])." records to associate with. </strong>";
-            $html .= '</div>';
-
-            return $html;
-        }
-
-        // Initiatize the html select tag
-        $html = "";
-        $html .= '<select name="'.$field['related_table_name'].'[]" id="'.$field['related_table_name'].'" size="10" class="form-control" multiple="multiple">';
-
-        // Construct the <option></option> tags for ALL tags in the tags table
-        foreach ($records as $record)
-        {
-            $html .= '<option ';
-            $html .= 'value="';
-            $html .= $record->id;
-            $html .= '">';
-            $html .= $record->title;
-            $html .= '</option>"';
-        }
-        $html .= '</select>';
-
-        $html .= $this->renderBootstratMultiselectPlugin( $field['related_table_name'], "multiple", count($records) );
-
-        return $html;
-    }
-
-    /*
-     * Construct a dropdown with multiple selects from the related table,
-     * highlighting what is already selected.
-     *
-     * YES, THIS WOULD NORMALLY BE IN MY HELPERS PACKAGE, BUT THE "CREATE" VERSION ABOVE
-     * NEEDS THE REPOSITORY. I WANT TO KEEP THE "CREATE" AND "EDIT" METHODS TOGETHER
-     *
-     * @param  string  $relatedTableName     Name of the related table
-     * @param  string  $relatedModelClass    Name of the related model class
-     * @param  int     $id                   Id of primary table
-     * @return string
-     */
-    public function multipleSelectFromRelatedTableUpdate($relatedTableName, $relatedModelClass, $id)
-    {
-        // Get the related records
-        $relatedTableRecords = $this->selectOptionWhereClauseEnabledField($relatedTableName);
-
-        if (empty($relatedTableRecords))
-        {
-            $html  = '<div class="alert alert-warning" role="alert">';
-            $html .= "<strong>There are no ".strtolower($relatedModelClass)." records to associate with. </strong>";
-            $html .= '</div>';
-
-            return $html;
-        }
-
-        // Create an array of tag IDs that are currently attached to the post
-        $relatedTableRecordsAssociatedWithThisParentId = [];
-
-        // Find the related records for the parent
-        $allRelatedTableRecordsByParentId = $this->getLookupTableRecordsAssociatedByParentId($relatedModelClass, $id, "title");
-
-        foreach ($allRelatedTableRecordsByParentId as $relatedTableRecordByParentId)
-        {
-            $relatedTableRecordsAssociatedWithThisParentId[] = $relatedTableRecordByParentId->id;
-        }
-
-        // Initiatize the html select tag
-        $html = "";
-        $html .= '<select name="'.$relatedTableName.'[]" id="'.$relatedTableName.'" size="6" class="form-control" multiple>';
-
-        // If this related record is attached to the primary record, then SELECTED it
-        foreach ($relatedTableRecords as $relatedTableRecord)
-        {
-            // If this tag is attached to the post, then SELECTED it
-            if ( in_array($relatedTableRecord->id, $relatedTableRecordsAssociatedWithThisParentId) )
-            {
-                $selected = ' selected="selected" ';
-            } else {
-                $selected = "";
-            }
-
-            $html .= '<option ';
-            $html .= $selected;
-            $html .= 'value="';
-            $html .= $relatedTableRecord->id;
-            $html .= '">';
-            $html .= $relatedTableRecord->title;
-            $html .= '</option>"';
-        }
-        $html .= '</select>';
-
-        $html .= $this->renderBootstratMultiselectPlugin( $relatedTableName, "multiple", count($relatedTableRecords) );
-
-        return $html;
-    }
-
-    /**
-     * The HTML for the Bootstrap Multiselect jQuery plugin
-     * https://github.com/davidstutz/bootstrap-multiselect
-     * params on line 393, bootstrap-multiselect/dist/js/bootstrap-multiselect.js
-     *
-     * @param   $selectid          string    The id.  <select id="$selectid" ..>
-     * @param   $singleOrMultiple  string    {single | multiple }
-     *                                       Select only one option, or select one or more options
-     * @param   $count             int       The number of options
-     * @return  string
-     */
-    private function renderBootstratMultiselectPlugin($selectid, $singleOrMultiple = "single", $count)
-    {
-        $html = '<script type="text/javascript">';
-        $html .= '$(document).ready(function() {';
-        $html .= "$('#".$selectid."').multiselect(";
-        $html .= "{";
-
-        $html .= "nonSelectedText: 'Select...',";
-        $html .= 'enableHTML: false,';
-
-        if ($count > 10) {
-            $html .= "enableFiltering: true,";
-            $html .= "enableCaseInsensitiveFiltering: false,";
-            $html .= "enableFullValueFiltering: false,";
-            $html .= "filterBehavior: 'text',";
-            $html .= "filterPlaceholder: 'Search...',";
-        }
-
-        if ($singleOrMultiple != "single") {
-            $html .= "includeSelectAllOption: true,";
-            $html .= "includeSelectAllIfMoreThan: 3,";
-            $html .= "delimiterText: ' | ',";
-        }
-
-        $html .= "buttonClass: 'btn btn-default'";
-
-        $html .= "}";
-        $html .= ");";
-        $html .= '});';
-        $html .= '</script>';
-
-        return $html;
-    }
-
-
-
-    ///////////////////////////////////////////////////////////////////
-    ////////////               POST UPDATES                   /////////
-    ///////////////////////////////////////////////////////////////////
-
-    /**
-     * When a post update is created, update the POSTS table to indicate that a post update for that post exists.
-     *
-     * @param  int    $post_id    The ID of the post that the post update pertains.
-     * @return void
-     */
-    public function postupdateExists($post_id)
-    {
-        DB::table('posts')
-            ->where('id', '=', $post_id)
-            ->update(['postupdate' => 1])
-            ;
-    }
-
-    /**
-     * What is the post_id of a given postupdate?
-     *
-     * @param  int    $id     The ID of a postupdate
-     * @return mixed
-     */
-    public function postIdOfPostupdate($id)
-    {
-        // $record is a stdClass
-        $record = DB::table('postupdates')
-            ->select('post_id')
-            ->where('id', '=', $id)
-            ->first()
-        ;
-
-        return $record->post_id;
-    }
-
-    /**
-     * When a post update is deleted, and no more post updates exist for that post, then update the
-     * POSTS table to indicate that no post updates for that post exist.
-     *
-     * @param  int    $post_id    The ID of the post that the post update pertains.
-     * @return void
-     */
-    public function postupdateNotExist($post_id)
-    {
-        if ($this->countPostUpdates($post_id) == 0)
-        {
-            DB::table('posts')
-                ->where('id', '=', $post_id)
-                ->update(['postupdate' => 0])
-            ;
-        }
-    }
-
-    /**
-     * How many post update records exist for a particular post?
-     *
-     * @param   int    $post_id    The ID of the post that the post update pertains.
-     * @return  int
-     */
-    public function countPostUpdates($post_id)
-    {
-        //$users = DB::table('users')->count();
-        return DB::table('postupdates')
-            ->where('post_id', $post_id)
-            ->count()
-        ;
-    }
-
-
 
     ///////////////////////////////////////////////////////////////////
     ////////////            MISC METHODS              /////////////////
     ///////////////////////////////////////////////////////////////////
 
-    /*
+    /**
      * What (lookup) table records are associated with another record resident in another table?
      *
      * Index blade files (displaying listings of records) use this method. Usually, with Eloquent, we
@@ -1919,18 +345,17 @@ class BaseRepository
     }
 
 
-    /*
+    /**
     * Return a new instance of the model.
-    * For CREATE
     *
     * @return object
     */
     public function newModelInstance()
     {
-        return new $this->model;
+        //return new $this->model;
     }
 
-    /*
+    /**
      * Do a "SELECT * FOR table" with optional "WHERE enabled = 1"
      *
      * @param  string   $relatedTableName   The name of the related table
@@ -1958,8 +383,9 @@ class BaseRepository
     //////////            FRONT END METHODS              //////////////
     ///////////////////////////////////////////////////////////////////
 
-    /*
-     *
+    /**
+     * @param  string   $slug
+     * @return eloquent
      */
     public function findEnabledPostBySlug($slug)
     {
