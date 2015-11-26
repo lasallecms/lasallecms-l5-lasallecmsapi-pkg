@@ -355,6 +355,7 @@ trait RepositorySpecificHTMLHelpers
 
         $html .= "nonSelectedText: 'Select...',";
         $html .= 'enableHTML: false,';
+        $html .= "maxHeight: 200,";
 
         if ($count > 10) {
             $html .= "enableFiltering: true,";
