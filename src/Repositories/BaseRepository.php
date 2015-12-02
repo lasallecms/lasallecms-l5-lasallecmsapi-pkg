@@ -352,7 +352,7 @@ class BaseRepository
     */
     public function newModelInstance()
     {
-        //return new $this->model;
+        return new $this->model;
     }
 
     /**
