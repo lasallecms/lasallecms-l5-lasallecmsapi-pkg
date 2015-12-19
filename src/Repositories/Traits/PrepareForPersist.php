@@ -484,6 +484,10 @@ trait PrepareForPersist
      */
     public function prepareFeaturedImageForPersist($featured_image)
     {
+        // Nothing to do since featured image processing is done in validation
+        // (FormProcessing/FeaturedImageProcessing.php),
+        // Leaving this method intact just in case it becomes helpful in the future.
+
         return $featured_image;
     }
 

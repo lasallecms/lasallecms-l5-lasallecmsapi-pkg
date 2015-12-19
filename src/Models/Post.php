@@ -419,7 +419,7 @@ class Post extends BaseModel
                 'related_pivot_table'   => false,
                 'nullable'              => true,
                 'info'                  => 'LaSalleCast episode.',
-                'index_skip'            => false,
+                'index_skip'            => true,
                 'index_align'           => 'center',
             ];
         }
@@ -452,7 +452,7 @@ class Post extends BaseModel
                 'name'                  => 'excerpt',
                 'type'                  => 'text-no-editor',
                 'info'                  => "Teaser text displayed on your site's post listing. You can leave blank, or hand-craft your excerpt. Note the config settings for excerpts.",
-                'index_skip'            => false,
+                'index_skip'            => true,
                 'index_align'           => 'left',
         ];
 
@@ -470,12 +470,37 @@ class Post extends BaseModel
                 'index_skip'            => true,
         ];
 
+        // Start: Featured Image
+        // https://github.com/lasallecms/lasallecms-l5-formhandling-pkg/tree/master/views/adminformhandling/bob1/README_FEATURED_IMAGE.md
         $field_list[] = [
                 'name'                  => 'featured_image',
                 'type'                  => 'varchar',
                 'info'                  => 'The one single image that represents this post, displayed in lists, and at top of the post.',
+                'index_skip'            => false,
+        ];
+
+        $field_list[] = [
+                'name'                  => 'featured_image_url',
+                'type'                  => 'varchar',
+                'info'                  => '',
                 'index_skip'            => true,
         ];
+
+        $field_list[] = [
+                'name'                  => 'featured_image_upload',
+                'type'                  => 'file',
+                'info'                  => '',
+                'index_skip'            => true,
+        ];
+
+        $field_list[] = [
+                'name'                  => 'featured_image_server',
+                'type'                  => 'varchar',
+                'info'                  => '',
+                'index_skip'            => true,
+        ];
+
+        // End: Featured Image
 
         $field_list[] = [
                 'name'                  => 'enabled',

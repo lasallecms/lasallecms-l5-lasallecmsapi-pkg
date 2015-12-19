@@ -260,12 +260,38 @@ class Category extends BaseModel
             'info'         => 'Description is optional. 255 character maximum.',
             'index_skip'   => false,
         ],
+
+        // Start: Featured Image
+        // https://github.com/lasallecms/lasallecms-l5-formhandling-pkg/tree/master/views/adminformhandling/bob1/README_FEATURED_IMAGE.md
         [
-            'name'         => 'featured_image',
-            'type'         => 'varchar',
-            'info'         => false,
-            'index_skip'   => true,
+            'name'                  => 'featured_image',
+            'type'                  => 'varchar',
+            'info'                  => 'The one single image that represents this post, displayed in lists, and at top of the post.',
+            'index_skip'            => false,
         ],
+
+        [
+            'name'                  => 'featured_image_url',
+            'type'                  => 'varchar',
+            'info'                  => '',
+            'index_skip'            => true,
+        ],
+
+        [
+            'name'                  => 'featured_image_upload',
+            'type'                  => 'file',
+            'info'                  => '',
+            'index_skip'            => true,
+        ],
+
+        [
+            'name'                  => 'featured_image_server',
+            'type'                  => 'varchar',
+            'info'                  => '',
+            'index_skip'            => true,
+        ],
+        // End: Featured Image
+
         [
             'name'         => 'enabled',
             'type'         => 'boolean',

@@ -47,6 +47,7 @@ namespace Lasallecms\Lasallecmsapi\Posts;
 // LaSalle Software
 use Lasallecms\Lasallecmsapi\Repositories\BaseRepository;
 use Lasallecms\Lasallecmsapi\FormProcessing\BaseFormProcessing;
+use Lasallecms\Lasallecmsapi\FormProcessing\FeaturedImageProcessing;
 
 /*
  * Process an existing record.
@@ -61,6 +62,11 @@ class UpdatePostFormProcessing extends BaseFormProcessing
      * @var Lasallecms\Lasallecmsapi\Repositories\BaseRepository
      */
     protected $repository;
+
+    /**
+     * @var Lasallecms\Lasallecmsapi\FormProcessing\FeaturedImageProcessing
+     */
+    protected $featuredImageProcessing;
 
 
     ///////////////////////////////////////////////////////////////////
@@ -97,12 +103,16 @@ class UpdatePostFormProcessing extends BaseFormProcessing
      * Inject the model
      *
      * @param Lasallecms\Lasallecmsapi\Repositories\BaseRepository
+     * @param Lasallecms\Lasallecmsapi\FormProcessing\FeaturedImageProcessing
      */
-    public function __construct(BaseRepository $repository)
+    public function __construct(BaseRepository $repository, FeaturedImageProcessing $featuredImageProcessing)
     {
         $this->repository = $repository;
 
         $this->repository->injectModelIntoRepository($this->namespaceClassnameModel);
+
+        // inject featured image processing class
+        $this->featuredImageProcessing = $featuredImageProcessing;
     }
 
     /*
@@ -121,7 +131,24 @@ class UpdatePostFormProcessing extends BaseFormProcessing
         $data = $this->sanitize($data, $this->type);
 
 
-        // Validate
+        // Process the featured image, including validating the featured image
+        $featuredImageProcessing = $this->featuredImageProcessing->process($data);
+
+        // Did the featured image validation fail?
+        if ($featuredImageProcessing['validationMessage'] != "passed") {
+
+            // Unlock the record
+            $this->unlock($data['id']);
+
+            // Prepare the response array, and then return to the edit form with error messages
+            return $this->prepareResponseArray('validation_failed', 500, $data, $featuredImageProcessing['validationMessage']);
+        }
+        if ($featuredImageProcessing['validationMessage'] == "passed") {
+            $data['featured_image'] = $featuredImageProcessing['featured_image'];
+        }
+
+
+        // Validate the rest of the form fields' data
         if ($this->validate($data, $this->type) != "passed")
         {
             // Unlock the record

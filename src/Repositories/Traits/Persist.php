@@ -80,6 +80,16 @@ trait Persist
                 continue;
             }
 
+            if (
+                ($field['name'] == "featured_image_url") ||
+                ($field['name'] == "featured_image_upload") ||
+                ($field['name'] == "featured_image_server")
+
+            ) {
+                // Ignore these form fields, as there are no such database fields.
+                // These fields are for featured image selection and processing only.
+                continue;
+            }
 
             // Related tables with pivot tables; that is, with one-to-many or many-to-many relationships
             // have their own save routine, since the relationships are stored in a separate database table
@@ -217,6 +227,16 @@ trait Persist
                 continue;
             }
 
+            if (
+                ($field['name'] == "featured_image_url") ||
+                ($field['name'] == "featured_image_upload") ||
+                ($field['name'] == "featured_image_server")
+
+            ) {
+                // Ignore these form fields, as there are no such database fields.
+                // These fields are for featured image selection and processing only.
+                continue;
+            }
 
             // Related tables with pivot tables; that is, with one-to-many or many-to-many relationships
             // have their own save routine, since the relationships are stored in a separate database table
