@@ -215,6 +215,11 @@ class FeaturedImageProcessing
      */
     public function validateFeaturedImageServer($featuredImageServer) {
 
+        // if there is no featured_image_server, then there is no featured image -- which is ok
+        if ($this->isFieldValueBlank($featuredImageServer) || ($featuredImageServer == "") ) {
+            return "passed";
+        }
+
         // not acceptable file extension
         if (!$this->isImageFileExtensionKosher($featuredImageServer)) {
             return "The image file you selected on your server, ".$featuredImageServer.",  is not an accepted image file type.";
