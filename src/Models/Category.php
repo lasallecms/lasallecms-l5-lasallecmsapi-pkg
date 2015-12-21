@@ -269,21 +269,18 @@ class Category extends BaseModel
             'info'                  => 'The one single image that represents this post, displayed in lists, and at top of the post.',
             'index_skip'            => false,
         ],
-
         [
             'name'                  => 'featured_image_url',
             'type'                  => 'varchar',
             'info'                  => '',
             'index_skip'            => true,
         ],
-
         [
             'name'                  => 'featured_image_upload',
             'type'                  => 'file',
             'info'                  => '',
             'index_skip'            => true,
         ],
-
         [
             'name'                  => 'featured_image_server',
             'type'                  => 'varchar',

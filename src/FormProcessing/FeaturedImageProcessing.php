@@ -140,21 +140,6 @@ class FeaturedImageProcessing
     }
 
 
-    ///////////////////////////////////////////////////////////////////
-    /////////////          PROCESSING METHODS          ////////////////
-    ///////////////////////////////////////////////////////////////////
-
-    /**
-     * Evaluate whether the field's data is blank
-     *
-     * @param  string  $field  The form field's value
-     * @return bool
-     */
-    public function isFieldValueBlank($field) {
-        if ($field) return true;
-        return false;
-    }
-
 
     ///////////////////////////////////////////////////////////////////
     /////////////          VALIDATION METHODS          ////////////////
@@ -216,7 +201,7 @@ class FeaturedImageProcessing
     public function validateFeaturedImageServer($featuredImageServer) {
 
         // if there is no featured_image_server, then there is no featured image -- which is ok
-        if ($this->isFieldValueBlank($featuredImageServer) || ($featuredImageServer == "") ) {
+        if ((!$featuredImageServer) || ($featuredImageServer == "") ) {
             return "passed";
         }
 
@@ -231,6 +216,17 @@ class FeaturedImageProcessing
         }
 
         return "passed";
+    }
+
+    /**
+     * Evaluate whether the field's data is blank
+     *
+     * @param  string  $field  The form field's value
+     * @return bool
+     */
+    public function isFieldValueBlank($field) {
+        if ($field) return true;
+        return false;
     }
 
     /**
