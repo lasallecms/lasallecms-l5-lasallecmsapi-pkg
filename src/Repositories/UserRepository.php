@@ -45,6 +45,7 @@ use Lasallecms\Usermanagement\Models\User;
 
 // Laravel facades
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -178,8 +179,20 @@ class UserRepository extends BaseRepository
             $user->enabled = 0;
         }
 
-        $user->created_by  = Auth::user()->id;
-        $user->updated_by  = Auth::user()->id;
+        // When the admin is adding a new user, use their user id
+        // for the created_by and updated_by fields. When no
+        // one is logged in during this user creation process, it
+        // means that someone is initiating their own registration
+        // via the front-end. In which case, use the user id 
+        // specified in the auth config file.
+
+        if (isset(Auth::user()->id)) {
+            $user->created_by  = Auth::user()->id;
+            $user->updated_by  = Auth::user()->id;
+        } else {
+            $user->created_by  = config('auth.auth_user_id_for_created_by_for_frontend_user_registration');
+            $user->updated_by  = config('auth.auth_user_id_for_created_by_for_frontend_user_registration');
+        }
 
         // INSERT!
         $saveWentOk = $user->save();
