@@ -33,6 +33,7 @@ namespace Lasallecms\Lasallecmsapi\Repositories\Traits;
 
 // Laravel facades
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 // Third party classes
 use Carbon\Carbon;
@@ -339,6 +340,38 @@ trait Persist
      */
     public function destroyRecord($id)
     {
-        return $this->getDestroy($id);
+        $deleteWentOk = $this->getDestroy($id);
+
+        if ($deleteWentOk) {
+
+            // Get the field list
+            // The field list resides in the model. Exists either as a property, or returned from method -- but not both.
+            if ($this->model->field_list) {
+                // exists as a property
+                $fieldList = $this->model->field_list;
+            } else {
+                // exists via method
+                $fieldList = $this->model->getFieldList();
+            }
+
+            // What would the pivot table's fieldname be, for the pivot table's field referring to $id?
+            $pivotTableFieldName = strtolower($this->model->model_class) . "_id";
+
+            // Iterate through the field list, looking for pivot tables
+            // Iterate through the field list to identify possible table relationships that use pivot database tables
+            foreach ($fieldList as $field) {
+
+                if (($field['type'] == "related_table") && ($field['related_pivot_table'])) {
+                    // Delete associated records
+                    DB::table($field['related_pivot_table_name'])
+                        ->where($pivotTableFieldName, '=', $id)
+                        ->delete();
+                }
+            }
+
+            return true;
+        }
+
+        return false;
     }
 }
