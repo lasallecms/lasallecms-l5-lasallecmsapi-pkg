@@ -64,8 +64,7 @@ class UserRepository extends BaseRepository
      *
      * @param  Lasallecms\Lasallecmsapi\Models\User
      */
-    public function __construct(User $model)
-    {
+    public function __construct(User $model) {
         $this->model = $model;
     }
 
@@ -75,8 +74,7 @@ class UserRepository extends BaseRepository
      *
      * @return collection
      */
-    public function allUsersForDisplayOnAdminListing()
-    {
+    public function allUsersForDisplayOnAdminListing() {
         return $this->model->orderBy('title', 'ASC')->get();
     }
 
@@ -87,13 +85,11 @@ class UserRepository extends BaseRepository
      * @param id  $id
      * @return array
      */
-    public function countAllPostsThatHaveUserId($id)
-    {
+    public function countAllPostsThatHaveUserId($id)  {
         // How many posts did this user create (created_by)?
         $results = DB::table('posts')->where('created_by', '=', $id)->get();
 
-        if ( (count($results)) == 0 || (empty($results)) )
-        {
+        if ( (count($results)) == 0 || (empty($results)) ) {
             $created_by = 0;
         } else {
             $created_by = count($results);
@@ -102,8 +98,7 @@ class UserRepository extends BaseRepository
         // How many posts did this user update (updated_by)?
         $results = DB::table('posts')->where('updated_by', '=', $id)->get();
 
-        if ( (count($results)) == 0 || (empty($results)) )
-        {
+        if ( (count($results)) == 0 || (empty($results)) ) {
             $updated_by = 0;
         } else {
             $updated_by = count($results);
@@ -118,8 +113,7 @@ class UserRepository extends BaseRepository
      *
      * @return bool
      */
-    public function isFirstAmongEqualsUserInDatabase()
-    {
+    public function isFirstAmongEqualsUserInDatabase() {
         $config = config('auth.administrator_first_among_equals_email');
 
         $results = count(
@@ -128,7 +122,9 @@ class UserRepository extends BaseRepository
             ->get()
         );
 
-        if ( $results == 0 ) return false;
+        if ( $results == 0 ) {
+            return false;
+        }
 
         return true;
     }
@@ -139,8 +135,7 @@ class UserRepository extends BaseRepository
      *
      * @return array
      */
-    public function getValidationRulesForUpdateWithPassword()
-    {
+    public function getValidationRulesForUpdateWithPassword() {
         return $this->model->validationRulesForUpdateWithPassword;
     }
 
@@ -149,8 +144,7 @@ class UserRepository extends BaseRepository
      *
      * @return array
      */
-    public function getValidationRulesForUpdateNoPassword()
-    {
+    public function getValidationRulesForUpdateNoPassword() {
         return $this->model->validationRulesForUpdateNoPassword;
     }
 
@@ -161,23 +155,32 @@ class UserRepository extends BaseRepository
      * @param  array  $data
      * @return bool
      */
-    public function createUser($data)
-    {
+    public function createUser($data) {
         $user = new User;
 
         $user->name       = $data['name'];
         $user->email      = $data['email'];
         $user->password   = bcrypt($data['password']);
 
-        if ($data['activated'] != "1")
-        {
+        if ($data['activated'] != "1") {
             $user->activated = 0;
         }
 
-        if ($data['enabled'] != "1")
-        {
+        if ($data['enabled'] != "1") {
             $user->enabled = 0;
         }
+
+
+        // two factor authorization
+        if ($data['two_factor_auth_enabled'] != "1") {
+            $user->two_factor_auth_enabled = 0;
+        } else {
+            $user->two_factor_auth_enabled = 1;
+        }
+        $user->phone_country_code      = $data['phone_country_code'];
+        $user->phone_number            = $data['phone_number'];
+
+
 
         // When the admin is adding a new user, use their user id
         // for the created_by and updated_by fields. When no
@@ -198,8 +201,7 @@ class UserRepository extends BaseRepository
         $saveWentOk = $user->save();
 
         // If the save to the database table went ok, then let's INSERT related IDs into the pivot tables,
-        if ($saveWentOk)
-        {
+        if ($saveWentOk) {
             // INSERT into the pivot table
             $this->associateRelatedRecordsToNewRecord(
                 $user,
@@ -220,28 +222,34 @@ class UserRepository extends BaseRepository
      * @param  array  $data
      * @return bool
      */
-    public function updateUser($data)
-    {
+    public function updateUser($data) {
         $user = $this->getFind($data['id']);
 
         $user->name       = $data['name'];
         $user->email      = $data['email'];
 
         // The password need not be changed
-        if ($data['password'] != "")
-        {
+        if ($data['password'] != "") {
             $user->password   = bcrypt($data['password']);
         }
 
-        if ($data['activated'] != "1")
-        {
+        if ($data['activated'] != "1") {
             $user->activated = 0;
         }
 
-        if ($data['enabled'] != "1")
-        {
+        if ($data['enabled'] != "1") {
             $user->enabled = 0;
         }
+
+        // two factor authorization
+        if ($data['two_factor_auth_enabled'] != "1") {
+            $user->two_factor_auth_enabled = 0;
+        } else {
+            $user->two_factor_auth_enabled = 1;
+        }
+        $user->phone_country_code      = $data['phone_country_code'];
+        $user->phone_number            = $data['phone_number'];
+
 
         $user->created_by  = Auth::user()->id;
         $user->updated_by  = Auth::user()->id;
@@ -249,8 +257,7 @@ class UserRepository extends BaseRepository
         $saveWentOk = $user->save();
 
         // If the save to the database table went ok, then let's UPDATE/INSERT related IDs into the pivot tables,
-        if ($saveWentOk)
-        {
+        if ($saveWentOk) {
             // INSERT into the pivot table
             $this->associateRelatedRecordsToUpdatedRecord(
                 $user,
@@ -275,11 +282,9 @@ class UserRepository extends BaseRepository
      * @param  int     $id      Users table ID
      * @return mixed
      */
-    public function getPeopleIdForIndexListing($id)
-    {
+    public function getPeopleIdForIndexListing($id) {
         // Does the PEOPLES table exist?
-        if (Schema::hasTable('peoples'))
-        {
+        if (Schema::hasTable('peoples')) {
             $person = DB::table('peoples')->where('user_id', '=', $id)->first();
 
             if (!$person) return "Not in LaSalleCRM";

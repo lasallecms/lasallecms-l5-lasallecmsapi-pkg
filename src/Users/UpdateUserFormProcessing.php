@@ -68,8 +68,7 @@ class UpdateUserFormProcessing extends BaseFormProcessing implements FormProcess
      *
      * @param  Lasallecms\Lasallecmsapi\Contracts\UserRepository
      */
-    public function __construct(UserRepository $repository)
-    {
+    public function __construct(UserRepository $repository) {
         $this->repository = $repository;
     }
 
@@ -79,8 +78,7 @@ class UpdateUserFormProcessing extends BaseFormProcessing implements FormProcess
      * @param  The command bus object   $updateUserCommand
      * @return The custom response array
      */
-    public function quarterback($updateUserCommand)
-    {
+    public function quarterback($updateUserCommand) {
         // Get inputs into array
         $data = (array) $updateUserCommand;
 
@@ -133,8 +131,7 @@ class UpdateUserFormProcessing extends BaseFormProcessing implements FormProcess
      * @param  text   $type   Are we validating a create or update? ==> WHICH IS NOT USED IN THIS CUSTOM VALIDATE METHOD
      * @return bool
      */
-    public function validate($data, $type)
-    {
+    public function validate($data, $type) {
         // If there is a password, get the validation rules for "there is a password)
         if ($data['password'])
         {

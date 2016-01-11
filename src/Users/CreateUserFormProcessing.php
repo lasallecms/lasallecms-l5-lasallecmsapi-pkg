@@ -1,4 +1,5 @@
 <?php
+
 namespace Lasallecms\Lasallecmsapi\Users;
 
 /**
@@ -65,8 +66,7 @@ class CreateUserFormProcessing extends BaseFormProcessing implements FormProcess
      *
      * @param  Lasallecms\Lasallecmsapi\Contracts\UserRepository
      */
-    public function __construct(UserRepository $repository)
-    {
+    public function __construct(UserRepository $repository) {
         $this->repository = $repository;
     }
 
@@ -76,8 +76,7 @@ class CreateUserFormProcessing extends BaseFormProcessing implements FormProcess
      * @param  The command bus object   $createUserCommand
      * @return The custom response array
      */
-    public function quarterback($createUserCommand)
-    {
+    public function quarterback($createUserCommand) {
         // Get inputs into array
         $data = (array) $createUserCommand;
 
