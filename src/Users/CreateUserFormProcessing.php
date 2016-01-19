@@ -46,31 +46,41 @@ namespace Lasallecms\Lasallecmsapi\Users;
 use Lasallecms\Lasallecmsapi\Contracts\FormProcessing;
 use Lasallecms\Lasallecmsapi\FormProcessing\BaseFormProcessing;
 use Lasallecms\Lasallecmsapi\Repositories\UserRepository;
+use Lasallecms\Lasallecmsapi\Users\ExtraUserValidation;
 
 
-/*
- * Process a new tag .
- * Go through the standard process (interface).
+/**
+ * Class CreateUserFormProcessing
+ * @package Lasallecms\Lasallecmsapi\Users
  */
 class CreateUserFormProcessing extends BaseFormProcessing implements FormProcessing
 {
-    /*
+    /**
      * Instance of repository
      *
      * @var Lasallecms\Lasallecmsapi\Contracts\UserRepository
      */
     protected $repository;
 
-    /*
+    /**
+     * @var Lasallecms\Lasallecmsapi\Repositories\ExtraUserValidation
+     */
+    protected $extraUserValidation;
+
+
+    /**
      * Inject the model
      *
      * @param  Lasallecms\Lasallecmsapi\Contracts\UserRepository
+     * @param  Lasallecms\Lasallecmsapi\Repositories\ExtraUserValidation
      */
-    public function __construct(UserRepository $repository) {
-        $this->repository = $repository;
+    public function __construct(UserRepository $repository, ExtraUserValidation $extraUserValidation) {
+        $this->repository          = $repository;
+        $this->extraUserValidation = $extraUserValidation;
     }
 
-    /*
+
+    /**
      * The processing steps.
      *
      * @param  The command bus object   $createUserCommand
@@ -84,19 +94,28 @@ class CreateUserFormProcessing extends BaseFormProcessing implements FormProcess
         // Sanitize
         $data = $this->sanitize($data, "create");
 
+        // Wash the phone number
+        if (isset($data['phone_number'])) {
+            $data['phone_number'] = $this->repository->washPhoneNumber($data['phone_number']);
+        }
+
 
         // Validate
-        if ($this->validate($data, "create") != "passed")
-        {
+        if ($this->validate($data, "create") != "passed") {
             // Prepare the response array, and then return to the edit form with error messages
             return $this->prepareResponseArray('validation_failed', 500, $data, $this->validate($data, "create"));
         }
 
+        // Extra user validation
+        $extraUserValidation = $this->extraUserValidation->extraValidation($data);
+        if ($extraUserValidation['status_text'] != "extra_validation_successful") {
+            // Prepare the response array, and then return to the edit form with error messages
+            return $this->prepareResponseArray('validation_failed', 500, $data, $extraUserValidation['errorMessages']);
+        }
+
 
         // Create
-        //if (!$this->persist($data))
-        if ( !$this->repository->createUser($data) )
-        {
+        if ( !$this->repository->createUser($data) ) {
             // Prepare the response array, and then return to the edit form with error messages
             // Laravel's https://github.com/laravel/framework/blob/5.0/src/Illuminate/Database/Eloquent/Model.php
             //  does not prepare a MessageBag object, so we'll whip up an error message in the
@@ -106,5 +125,46 @@ class CreateUserFormProcessing extends BaseFormProcessing implements FormProcess
 
         // Prepare the response array, and then return to the command
         return $this->prepareResponseArray('create_successful', 200, $data);
+    }
+
+
+    /**
+     * The processing steps.
+     *
+     * @param  The command bus object   $createUserCommand
+     * @return The custom response array
+     */
+    public function quarterback2fa($createUserCommand) {
+
+        // Get inputs into array
+        $data = (array) $createUserCommand;
+
+
+        // Sanitize
+        $data = $this->sanitize($data, "create");
+
+        // Wash the phone number
+        $data['phone_number'] = $this->repository->washPhoneNumber($data['phone_number']);
+
+
+        // Validate
+        if ($this->validate($data, "create") != "passed") {
+            // Prepare the response array, and then return to the edit form with error messages
+            return $this->prepareResponseArray('validation_failed', 500, $data, $this->validate($data, "create"));
+        }
+
+        // Extra user validation
+        $extraUserValidation = $this->extraUserValidation->extraValidation($data);
+        if ($extraUserValidation['status_text'] != "extra_validation_successful") {
+            // Prepare the response array, and then return to the edit form with error messages
+            return $this->prepareResponseArray('validation_failed', 500, $data, $extraUserValidation['errorMessages']);
+        }
+
+
+        // We're here just to validate the data, not to create a database record.
+        // So, no persist!
+
+        // Prepare the response array, and then return to the command
+        return $this->prepareResponseArray('validation_successful', 200, $data);
     }
 }

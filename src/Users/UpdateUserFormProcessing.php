@@ -46,6 +46,7 @@ namespace Lasallecms\Lasallecmsapi\Users;
 use Lasallecms\Lasallecmsapi\Contracts\FormProcessing;
 use Lasallecms\Lasallecmsapi\FormProcessing\BaseFormProcessing;
 use Lasallecms\Lasallecmsapi\Repositories\UserRepository;
+use Lasallecms\Lasallecmsapi\Users\ExtraUserValidation;
 
 // Laravel facades
 use Illuminate\Support\Facades\Validator;
@@ -63,13 +64,20 @@ class UpdateUserFormProcessing extends BaseFormProcessing implements FormProcess
      */
     protected $repository;
 
+    /**
+     * @var Lasallecms\Lasallecmsapi\Repositories\ExtraUserValidation
+     */
+    protected $extraUserValidation;
+
     /*
      * Inject the model
      *
      * @param  Lasallecms\Lasallecmsapi\Contracts\UserRepository
+     * @param  Lasallecms\Lasallecmsapi\Repositories\ExtraUserValidation
      */
-    public function __construct(UserRepository $repository) {
+    public function __construct(UserRepository $repository, ExtraUserValidation $extraUserValidation) {
         $this->repository = $repository;
+        $this->extraUserValidation = $extraUserValidation;
     }
 
     /*
@@ -86,6 +94,11 @@ class UpdateUserFormProcessing extends BaseFormProcessing implements FormProcess
         // Sanitize
         $data = $this->sanitize($data, "update");
 
+        // Wash the phone number
+        if (isset($data['phone_number'])) {
+            $data['phone_number'] = $this->repository->washPhoneNumber($data['phone_number']);
+        }
+
 
         // Validate (note the override validate method below)
         if ($this->validate($data, "update") != "passed")
@@ -95,6 +108,17 @@ class UpdateUserFormProcessing extends BaseFormProcessing implements FormProcess
 
             // Prepare the response array, and then return to the edit form with error messages
             return $this->prepareResponseArray('validation_failed', 500, $data, $this->validate($data, "update"));
+        }
+
+        // Extra user validation
+        $extraUserValidation = $this->extraUserValidation->extraValidation($data);
+        if ($extraUserValidation['status_text'] != "extra_validation_successful") {
+
+            // Unlock the record
+            $this->unlock($data['id']);
+
+            // Prepare the response array, and then return to the edit form with error messages
+            return $this->prepareResponseArray('validation_failed', 500, $data, $extraUserValidation['errorMessages']);
         }
 
 

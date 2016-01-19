@@ -51,7 +51,7 @@ use Illuminate\Support\Facades\Schema;
 
 class UserRepository extends BaseRepository
 {
-    /*
+    /**
      * Instance of model
      *
      * @var Lasallecms\Lasallecmsapi\Models\User
@@ -59,7 +59,7 @@ class UserRepository extends BaseRepository
     protected $model;
 
 
-    /*
+    /**
      * Inject the model
      *
      * @param  Lasallecms\Lasallecmsapi\Models\User
@@ -69,7 +69,7 @@ class UserRepository extends BaseRepository
     }
 
 
-    /*
+    /**
      * Display all the tags in the admin listing
      *
      * @return collection
@@ -79,10 +79,10 @@ class UserRepository extends BaseRepository
     }
 
 
-    /*
+    /**
      * Find all the post records associated with a tag
      *
-     * @param id  $id
+     * @param  int    $id     id
      * @return array
      */
     public function countAllPostsThatHaveUserId($id)  {
@@ -107,7 +107,7 @@ class UserRepository extends BaseRepository
         return ['created_by' => $created_by, 'updated_by' => $updated_by];
     }
 
-    /*
+    /**
      * Is the "First Among Equals" user specified in the auth config (which is set by my user
      * management package) actually in the database?
      *
@@ -130,7 +130,34 @@ class UserRepository extends BaseRepository
     }
 
 
-    /*
+
+    ///////////////////////////////////////////////////////////
+    //                    SANITIZE                           //
+    ///////////////////////////////////////////////////////////
+
+    /**
+     * Sanitize the sms phone number
+     *
+     * The user creation/modification flow does *not* go through the
+     * admin form automation process. It is a bespoke process,
+     * so I have to "wash" it here.
+     *
+     * @param  text   $phoneNumber
+     * @return string
+     */
+    public function washPhoneNumber($phoneNumber) {
+
+        // Remove all non digits
+        return preg_replace('/[^0-9]/', '', $phoneNumber);
+    }
+
+
+
+    ///////////////////////////////////////////////////////////
+    //                    VALIDATION                         //
+    ///////////////////////////////////////////////////////////
+
+    /**
      * Get validation array for UPDATE WITH PASSWORD from the user model
      *
      * @return array
@@ -139,7 +166,7 @@ class UserRepository extends BaseRepository
         return $this->model->validationRulesForUpdateWithPassword;
     }
 
-    /*
+    /**
      * Get validation array for UPDATE WITH *NO* PASSWORD from the user model
      *
      * @return array
@@ -149,7 +176,92 @@ class UserRepository extends BaseRepository
     }
 
 
-    /*
+    /**
+     * Validate phone number
+     *
+     * @param  string   $phoneNumber
+     * @return bool
+     */
+    public function validatePhoneNumber($phoneNumber) {
+        // must be 10 chars (digits)
+        if (strlen($phoneNumber) == 10) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Password should not use the word "password"
+     *
+     * I am countering a pet peeve!
+     *
+     * @param  text  $password
+     * @return bool
+     */
+    public function validatePasswordNotUseWordPassword($password) {
+        $washedPassword = trim($password);
+        $washedPassword = strtolower($password);
+
+        // if the word "password" resides within the password, then no good
+        if (strpos($washedPassword, "password") !== false) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Password should not be the username
+     *
+     * In my experience, some bots use the username as the password
+     *
+     * @param  text  $username
+     * @param  text  $password
+     * @return bool
+     */
+    public function validatePasswordNotUseUsername($username, $password) {
+        $washedPassword = trim($password);
+        $washedPassword = strtolower($password);
+
+        $washedUsername = trim($username);
+        $washedUsername = strtolower($username);
+
+        if ($washedPassword == $washedUsername) {
+            return false;
+        }
+
+        // remove hyphens in the username, and compare again
+        // maybe username "Bob Bloom" has password "bob-bloom"
+        $washedUsernameHyphen = str_replace(" ", "-", $washedUsername);
+        if ($washedPassword == $washedUsernameHyphen) {
+            return false;
+        }
+
+        // remove underscores in the username, and compare again
+        // maybe username "Bob Bloom" has password "bob_bloom"
+        $washedUsernameUnderscore = str_replace(" ", "_", $washedUsername);
+        if ($washedPassword == $washedUsernameUnderscore) {
+            return false;
+        }
+
+        // remove spaces in the username, and compare again
+        // maybe username "Bob Bloom" has password "bobbloom"
+        $washedUsername = str_replace(" ", "", $washedUsername);
+        if ($washedPassword == $washedUsername) {
+            return false;
+        }
+
+        return true;
+    }
+
+
+
+    ///////////////////////////////////////////////////////////
+    //                      PERSIST                          //
+    ///////////////////////////////////////////////////////////
+
+    /**
      * Create (INSERT)
      *
      * @param  array  $data
@@ -172,6 +284,8 @@ class UserRepository extends BaseRepository
 
 
         // two factor authorization
+        // the front-end registrationdoes not set a value for this field,
+        // but the admin does
         if ($data['two_factor_auth_enabled'] != "1") {
             $user->two_factor_auth_enabled = 0;
         } else {
@@ -216,7 +330,7 @@ class UserRepository extends BaseRepository
         return false;
     }
 
-    /*
+    /**
      * UPDATE
      *
      * @param  array  $data
@@ -276,7 +390,7 @@ class UserRepository extends BaseRepository
     //            The LaSalleCRM PEOPLES table               //
     ///////////////////////////////////////////////////////////
 
-    /*
+    /**
      * Get the ID from the PEOPLES table
      *
      * @param  int     $id      Users table ID

@@ -151,7 +151,7 @@ class BaseFormProcessing implements FormProcessing
      *                                 500 = error
      * @param  array   $data           Sanitized data
      * @param  object  $errorMessages  Expect this to be
-     *                                 https://github.com/laravel/framework/blob/5.0/src/Illuminate/Support/MessageBag.php
+     *                                 https://github.com/laravel/framework/blob/5.1/src/Illuminate/Support/MessageBag.php
      */
     public function prepareResponseArray($status_text, $status_code, $data = null, $errorMessages = null)
     {
