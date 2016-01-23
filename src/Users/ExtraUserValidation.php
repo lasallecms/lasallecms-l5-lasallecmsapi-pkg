@@ -78,15 +78,20 @@ class ExtraUserValidation
     /**
      * Perform extra validation
      *
-     * @param  array $data
+     * @param  array  $data
+     * @param  bool    $performPhoneValidation
      * @return array
      */
-    public function extraValidation($data) {
+    public function extraValidation($data, $performPhoneValidation=true) {
 
         $this->messages = new MessageBag;
 
         // is the cell number where text messages will be sent ok?
-        if (!$this->userRepository->validatePhoneNumber($data['phone_number'])) {
+        if (
+            (!$this->userRepository->validatePhoneNumber($data['phone_number']))
+            && ($performPhoneValidation)
+        )
+        {
             // Prepare the response array, and then return to the edit form with error messages
 
             // first, add the error message to the message bag

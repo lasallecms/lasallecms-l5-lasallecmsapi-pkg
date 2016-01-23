@@ -107,12 +107,12 @@ class CreateUserFormProcessing extends BaseFormProcessing implements FormProcess
         }
 
         // Extra user validation
-        $extraUserValidation = $this->extraUserValidation->extraValidation($data);
+        $extraUserValidation = $this->extraUserValidation->extraValidation($data, false);
+
         if ($extraUserValidation['status_text'] != "extra_validation_successful") {
             // Prepare the response array, and then return to the edit form with error messages
             return $this->prepareResponseArray('validation_failed', 500, $data, $extraUserValidation['errorMessages']);
         }
-
 
         // Create
         if ( !$this->repository->createUser($data) ) {

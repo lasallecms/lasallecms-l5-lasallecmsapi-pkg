@@ -129,6 +129,19 @@ class UserRepository extends BaseRepository
         return true;
     }
 
+    /**
+     * Find the user's ID from the user's email address
+     *
+     * @param  string  $name
+     * @return int
+     */
+    public function findUserIdByEmail($email) {
+        return $this->model
+            ->where('email', $email)
+            ->value('id')
+        ;
+    }
+
 
 
     ///////////////////////////////////////////////////////////
