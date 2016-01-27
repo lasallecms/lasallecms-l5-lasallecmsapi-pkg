@@ -375,11 +375,15 @@ trait Persist
             // Iterate through the field list to identify possible table relationships that use pivot database tables
             foreach ($fieldList as $field) {
 
-                if (($field['type'] == "related_table") && ($field['related_pivot_table'])) {
-                    // Delete associated records
-                    DB::table($field['related_pivot_table_name'])
-                        ->where($pivotTableFieldName, '=', $id)
-                        ->delete();
+                if ($field['type'] == "related_table")  {
+
+                    if (($field['related_pivot_table'])) {
+                        // Delete associated records
+                        DB::table($field['related_pivot_table_name'])
+                            ->where($pivotTableFieldName, '=', $id)
+                            ->delete();
+                    }
+
                 }
             }
 
