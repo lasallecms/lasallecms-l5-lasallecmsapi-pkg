@@ -33,6 +33,7 @@ namespace Lasallecms\Lasallecmsapi\Repositories\Traits;
 
 // Laravel facades
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
 // Third party classes
@@ -106,10 +107,20 @@ trait Persist
 
         // Assign data to the standard database fields
         $modelInstance->created_at       = $data['created_at'] = Carbon::now();
-        $modelInstance->created_by       = $data['created_by'] = Auth::user()->id;
-
         $modelInstance->updated_at       = $data['updated_at'] = Carbon::now();
-        $modelInstance->updated_by       = $data['updated_by'] = Auth::user()->id;
+
+        // If the user is logged-in, the use the user's ID.
+        // Otherwise, this INSERT/create is automatically generated so there's no person
+        // to assign these fields to. So, use the user ID specified in the config.
+        if (Auth::check()) {
+            $modelInstance->created_by       = $data['created_by'] = Auth::user()->id;
+            $modelInstance->updated_by       = $data['updated_by'] = Auth::user()->id;
+        } else {
+            $modelInstance->created_by       = config('auth.auth_user_id_for_created_by_for_frontend_user_registration');
+            $modelInstance->updated_by       = config('auth.auth_user_id_for_created_by_for_frontend_user_registration');
+        }
+
+
 
         // INSERT!
         $saveWentOk = $modelInstance->save();
@@ -124,11 +135,14 @@ trait Persist
                 if (($field['type'] == "related_table") && (!empty($field['related_pivot_table'])))
                 {
                     // If the field is nullable, then having associated records is optional.
+                    // Having trouble with auto-generated data sending null value, so added "empty" condition
                     if (
-                        ( ($data == "")   ||
-                            ($data == null) ||
-                            (!$data)        ||
-                            (empty($data)) )
+                        ( ($data == "")    ||
+                          ($data == null)  ||
+                          (!$data)         ||
+                          (empty($data)) ) ||
+                          ($data[$field['name']] == null)
+
                         &&
                         ($field['nullable'])
                     )
