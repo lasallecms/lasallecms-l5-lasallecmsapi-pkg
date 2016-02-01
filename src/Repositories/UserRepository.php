@@ -114,7 +114,7 @@ class UserRepository extends BaseRepository
      * @return bool
      */
     public function isFirstAmongEqualsUserInDatabase() {
-        $config = config('auth.administrator_first_among_equals_email');
+        $config = config('lasallecmsusermanagement.administrator_first_among_equals_email');
 
         $results = count(
             $this->model
@@ -320,8 +320,8 @@ class UserRepository extends BaseRepository
             $user->created_by  = Auth::user()->id;
             $user->updated_by  = Auth::user()->id;
         } else {
-            $user->created_by  = config('auth.auth_user_id_for_created_by_for_frontend_user_registration');
-            $user->updated_by  = config('auth.auth_user_id_for_created_by_for_frontend_user_registration');
+            $user->created_by  = config('lasallecmsusermanagement.auth_user_id_for_created_by_for_frontend_user_registration');
+            $user->updated_by  = config('lasallecmsusermanagement.auth_user_id_for_created_by_for_frontend_user_registration');
         }
 
         // INSERT!

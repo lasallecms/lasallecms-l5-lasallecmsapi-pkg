@@ -116,8 +116,8 @@ trait Persist
             $modelInstance->created_by       = $data['created_by'] = Auth::user()->id;
             $modelInstance->updated_by       = $data['updated_by'] = Auth::user()->id;
         } else {
-            $modelInstance->created_by       = config('auth.auth_user_id_for_created_by_for_frontend_user_registration');
-            $modelInstance->updated_by       = config('auth.auth_user_id_for_created_by_for_frontend_user_registration');
+            $modelInstance->created_by       = config('lasallecmsusermanagement.auth_user_id_for_created_by_for_frontend_user_registration');
+            $modelInstance->updated_by       = config('lasallecmsusermanagement.auth_user_id_for_created_by_for_frontend_user_registration');
         }
 
 
