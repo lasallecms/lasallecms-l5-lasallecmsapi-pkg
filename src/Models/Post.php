@@ -547,6 +547,21 @@ class Post extends BaseModel
         ];
 
         $field_list[] = [
+            'name'                      => 'lookup_workflow_status_id',
+            'alternate_form_name'       => 'Workflow Status',
+            'type'                      => 'related_table',
+            'related_table_name'        => 'lookup_workflow_status',
+            'related_namespace'         => 'Lasallecms\Lasallecmsapi\Models',
+            'related_model_class'       => 'lookup_workflow_status',
+            'related_fk_constraint'     => false,
+            'related_pivot_table'       => false,
+            'nullable'                  => false,
+            'info'                      => 'What is the workflow status for this post?',
+            'index_skip'                => true,
+            'index_align'               => 'center',
+        ];
+
+        $field_list[] = [
                 'name'                  => 'categories',
                 'type'                  => 'related_table',
                 'related_table_name'    => 'categories',

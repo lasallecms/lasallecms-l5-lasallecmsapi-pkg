@@ -45,6 +45,27 @@ class CreateTables extends Migration {
 	 */
 	public function up()
     {
+        if (!Schema::hasTable('lookup_workflow_status'))
+        {
+            Schema::create('lookup_workflow_status', function (Blueprint $table)
+            {
+                $table->engine = 'InnoDB';
+                $table->increments('id')->unsigned();
+                $table->string('title')->unique();
+                $table->string('description');
+                $table->boolean('enabled')->default(true);
+                $table->timestamp('created_at');
+                $table->integer('created_by')->unsigned();
+                $table->foreign('created_by')->references('id')->on('users');
+                $table->timestamp('updated_at');
+                $table->integer('updated_by')->unsigned();
+                $table->foreign('updated_by')->references('id')->on('users');
+                $table->timestamp('locked_at')->nullable();
+                $table->integer('locked_by')->nullable()->unsigned();
+                $table->foreign('locked_by')->references('id')->on('users');
+            });
+        }
+
         if (!Schema::hasTable('categories'))
         {
             Schema::create('categories', function (Blueprint $table)
@@ -113,6 +134,9 @@ class CreateTables extends Migration {
                 $table->engine = 'InnoDB';
 
                 $table->increments('id')->unsigned();
+
+                $table->integer('lookup_workflow_status_id')->unsigned();
+                $table->foreign('lookup_workflow_status_id')->references('id')->on('lookup_workflow_status');
 
                 $table->string('title');
                 $table->string('slug')->unique();
@@ -260,6 +284,8 @@ class CreateTables extends Migration {
 
 		Schema::table('posts', function($table){
 		    $table->dropIndex('posts_slug_unique');
+            $table->dropIndex('posts_lookup_workflow_status_id_foreign');
+            $table->dropForeign('posts_lookup_workflow_status_id_foreign');
 		    $table->dropForeign('posts_created_by_foreign');
 		    $table->dropForeign('posts_updated_by_foreign');
 		    $table->dropForeign('posts_locked_by_foreign');
@@ -274,6 +300,15 @@ class CreateTables extends Migration {
 		    $table->dropForeign('postupdates_locked_by_foreign');
 		});
         Schema::dropIfExists('postupdates');
+
+        Schema::table('lookup_workflow_status', function($table){
+            $table->dropIndex('lookup_workflow_status_title_unique');
+            $table->dropForeign('lookup_workflow_status_created_by_foreign');
+            $table->dropForeign('lookup_workflow_status_updated_by_foreign');
+            $table->dropForeign('lookup_workflow_status_locked_by_foreign');
+        });
+        Schema::dropIfExists('lookup_workflow_status');
+
 
         // Enable foreign key constraints
         DB::statement('SET FOREIGN_KEY_CHECKS = 1');
