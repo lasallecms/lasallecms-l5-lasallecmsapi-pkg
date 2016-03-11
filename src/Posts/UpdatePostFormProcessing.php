@@ -1,4 +1,5 @@
 <?php
+
 namespace Lasallecms\Lasallecmsapi\Posts;
 
 /**
@@ -48,6 +49,10 @@ namespace Lasallecms\Lasallecmsapi\Posts;
 use Lasallecms\Lasallecmsapi\Repositories\BaseRepository;
 use Lasallecms\Lasallecmsapi\FormProcessing\BaseFormProcessing;
 use Lasallecms\Lasallecmsapi\FormProcessing\FeaturedImageProcessing;
+use Lasallecms\Lasallecmsapi\Events\SendPostToLaSalleCRMemailList;
+
+// Laravel facades
+use Illuminate\Support\Facades\Config;
 
 /*
  * Process an existing record.
@@ -179,6 +184,18 @@ class UpdatePostFormProcessing extends BaseFormProcessing
 
         // Unlock the record
         $this->unlock($data['id']);
+
+
+        if ($data['lookup_workflow_status_id'] == 5) {
+            // CONFIG TO SPECIFY IF WANT THE CUSTOM EVENT TO FIRE
+            if (Config::get('lasallecmsapi.lasallecrm_list_send_post_to_email_list')) {
+                // FIRE THE CUSTOM EVENT SEND_LASALLECRM_LIST_FOR_BASIC_LASALLECMSAPI_POST
+
+                // THE CONFIG SPECIFIES THE LIST_ID #
+                $data['listID'] = Config::get('lasallecmsapi.lasallecrm_list_the_id_of_the_list_you_want_to_use');
+                event(new SendPostToLaSalleCRMemailList($data));
+            }
+        }
 
 
         // Prepare the response array, and then return to the command

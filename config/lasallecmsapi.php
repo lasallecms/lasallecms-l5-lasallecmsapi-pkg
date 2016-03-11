@@ -58,4 +58,48 @@ return [
     //'excerpt_ellipses' => '',
     'append_excerpt_with_this_string' => '...',
 
+
+	/****************************************************************************************/
+	/*                  START: SEND POST TO LASALLECRM EMAIL LIST                            */
+	/****************************************************************************************/
+
+	/*
+	|--------------------------------------------------------------------------
+	| Use the built-in event to send a post to a LaSalleCRM email list
+	|--------------------------------------------------------------------------
+	|
+	| There is a built-in event that sends your most recent post to a LaSalleCRM email list.
+	| Instead of using something like MailChimp's RSS-to-email feature, we can just do it
+	| in-house.
+	|
+	| Each email recipient must exist as a LaSalleCRM person (but *not* necessarily a LaSalleCMS
+	| user who can login). And, each user must have their email address as a "primary" email address.
+	|
+	| This event is fired when you UPDATE a post using the "Send to List" workflow status
+	| (lookup_workflow_status_id = 5).
+	|
+	| Do you want to use this built-in event to send a post to the LaSalleCRM email list?
+	|
+	| true or false
+	|
+	*/
+	'lasallecrm_list_send_post_to_email_list' => true,
+
+	/*
+	|--------------------------------------------------------------------------
+	| List ID of the LaSalleCRM email list you want to send the post to
+	|--------------------------------------------------------------------------
+	|
+	| Which LaSalleCRM list do you want to send the post to?
+	|
+	| Specify the ID of the "lists" database table. Go to List Management | Lists, and
+	| use the number you see in the ID column next to the name of the list you want to use.
+	|
+	*/
+	'lasallecrm_list_the_id_of_the_list_you_want_to_use' => '1',
+
+	/****************************************************************************************/
+	/*                   END: SEND POST TO LASALLECRM EMAIL LIST                            */
+	/****************************************************************************************/
+
 ];
