@@ -186,19 +186,77 @@ class UpdatePostFormProcessing extends BaseFormProcessing
         $this->unlock($data['id']);
 
 
-        if ($data['lookup_workflow_status_id'] == 5) {
-            // CONFIG TO SPECIFY IF WANT THE CUSTOM EVENT TO FIRE
-            if (Config::get('lasallecmsapi.lasallecrm_list_send_post_to_email_list')) {
-                // FIRE THE CUSTOM EVENT SEND_LASALLECRM_LIST_FOR_BASIC_LASALLECMSAPI_POST
+     /* ================================================================================================================
+                                           ***  FIRE (CUSTOM) EVENTS ***
+        ----------------------------------------------------------------------------------------------------------------
+        It is at this point, after the update processing has concluded, when you want to fire custom events.
 
-                // THE CONFIG SPECIFIES THE LIST_ID #
+        By my reckoning, it is unlikely to fire custom events after the create processing. One: who gets it right the
+        time, that no editing will be required (eg, an article). Two: it's so easy to change the workflow_status_id in
+        the update, and we certainly do not want to duplicate code (in the create form processor), so just place the
+        fire events code here in the update form processor.
+
+        I want a confirmation before firing my send-post-to-a-LaSalleCRM-email-list event. I want this confirmation to
+        mimick my record deletion confirmation. That is, I want a completely separate non-ajax request to display the
+        confirmation. Some custom events will not require a confirmation, so the fun is to build a generic way to
+        accommodate either "confirm" and "no-confirm" event firing.
+
+        There is an UpdateResource-ModelName-FormProcessing.php for each table/model, and this is where I want the
+        (custom) event firing to be. I'm going to set up a generic snippet in the in
+        Lasallecms\Formhandling\AdminFormhandling\AdminFormBaseController::update to handle the confirmation, and I'm
+        going to create a new generic confirmation view for event firing confirmation at
+        lasallecrmlistmanagement::confirmations.confirm_send_to_list.
+
+        ================================================================================================================ */
+
+        // Send article to emails in a LaSalleCRM email list
+        if ($data['lookup_workflow_status_id'] == 5) {
+
+            // Config setting specifying whether to send the article (post) to a LaSalleCRM list
+            if (Config::get('lasallecmsapi.lasallecrm_list_send_post_to_email_list')) {
+
+                // The config setting that specifies the list ID
                 $data['listID'] = Config::get('lasallecmsapi.lasallecrm_list_the_id_of_the_list_you_want_to_use');
-                event(new SendPostToLaSalleCRMemailList($data));
+
+
+                // **************************************************************
+                // I want a confirmation of this event.
+                // **************************************************************
+
+                // only event confirmations need the following params.
+                // Will also need a route for the event, and a controller method to fire the event
+
+                // set up the params for the confirmation, because it is a generic event firing confirmation,
+                // and not a confirmation that is already set up specifically for this particular event firing
+
+                $data['modelName']          = "post";
+                $data['nameOfEventToFire']  = "SendPostToLaSalleCRMemailList";
+                $data['tableName']          = "posts";
+                $data['resourceRouteName']  = "posts";
+                $data['RouteToController']  = "admin.post";
+                $data['packageName']        = "LaSalleCMS";
+                $data['formActionRoute']    = "posts/sendPostToLaSalleCRMList";
+                $data['eventDescription']   = "sent this article to a LaSalleCRM email list";
+                $data                       = $data;
+
+                // I created a new "response array" (not a real response, just a var I use in my LaSalle Software)
+                // for "update successful, now confirm the event firing
+                return $this->prepareResponseArray('update_successful_now_confirm_before_firing_event', 200, $data);
+
+
+                // **************************************************************
+                // Here for reference: if you fire event without confirming first
+                // **************************************************************
+
+                // Fire the event
+                // $data['eventDescription'] = "fired the event to send this article to a LaSalleCRM email list";
+                // event(new SendPostToLaSalleCRMemailList($data));
+                // return $this->prepareResponseArray('update_successful_with_event_fired', 200, $data);
             }
         }
 
 
-        // Prepare the response array, and then return to the command
+        // Prepare the "response" array, and then return to the command
         return $this->prepareResponseArray('update_successful', 200, $data);
 
 
