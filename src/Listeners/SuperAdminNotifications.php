@@ -33,38 +33,42 @@ namespace Lasallecms\Lasallecmsapi\Listeners;
 
 // LaSalle Software
 use Lasallecms\Lasallecmsapi\Events\SendPostToLaSalleCRMemailList;
-use Lasallecrm\Listmanagement\SendEmails\SendEmailsFromList;
+use Lasallecrm\Listmanagement\SendEmails\SuperAdminNotificationSentToList;
 
 // Laravel classes
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class TriggerLaSalleCRMList implements ShouldQueue
-{
+/**
+ * Class SuperAdminNotificationSentToList
+ * @package Lasallecms\Lasallecmsapi\Listeners
+ */
+class SuperAdminNotifications implements ShouldQueue {
+
     /**
-     * @var Lasallecrm\Listmanagement\SendEmails\SendEmailsFromList
+     * @var  Lasallecrm\Listmanagement\SendEmails\SuperAdminNotificationSentToList
      */
-    protected $sendEmailsFromList;
+    protected $superAdminNotificationSentToList;
+
 
     /**
      * Create the event listener.
      *
-     * @param Lasallecrm\Listmanagement\SendEmails\SendEmailsFromList
      * @return void
      */
-    public function __construct(SendEmailsFromList $sendEmailsFromList)
+    public function __construct(SuperAdminNotificationSentToList $superAdminNotificationSentToList)
     {
-        $this->sendEmailsFromList = $sendEmailsFromList;
+        $this->superAdminNotificationSentToList = $superAdminNotificationSentToList;
     }
+
 
     /**
      * Handle the event.
      *
-     * @param  SendPostToLaSalleCRMemailList  $event
+     * @param  SendPostToLaSalleCRMemailList $event
      * @return void
      */
-    public function handle(SendPostToLaSalleCRMemailList $event)
-    {
-        $this->sendEmailsFromList->sendEmails($event->data['id']['listID'], $event->data['id']);
+    public function handle(SendPostToLaSalleCRMemailList $event) {
+        $this->superAdminNotificationSentToList->emailSuperAdministratorNotifications($event);
     }
 }

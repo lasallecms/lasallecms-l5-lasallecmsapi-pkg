@@ -47,7 +47,7 @@ class SendPostToLaSalleCRMemailList extends Event
     /**
      * @var array
      */
-    public $post;
+    public $data;
 
     /**
      * Create a new event instance.
@@ -58,8 +58,8 @@ class SendPostToLaSalleCRMemailList extends Event
     public function __construct($id)
     {
         // Add the user's ID to the data array
-        $post['id'] = $id;
-        $this->post = $post;
+        $data['id'] = $id;
+        $this->data = $data;
     }
 
     /**
