@@ -236,7 +236,7 @@ class UpdatePostFormProcessing extends BaseFormProcessing
                 $data['RouteToController']  = "admin.post";
                 $data['packageName']        = "LaSalleCMS";
                 $data['formActionRoute']    = "posts/sendPostToLaSalleCRMList";
-                $data['eventDescription']   = "sent this article to a LaSalleCRM email list";
+                $data['eventDescription']   = "send this article to a LaSalleCRM email list";
                 $data                       = $data;
 
                 // I created a new "response array" (not a real response, just a var I use in my LaSalle Software)
