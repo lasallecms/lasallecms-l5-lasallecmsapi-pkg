@@ -39,6 +39,10 @@ use Lasallecms\Helpers\Dates\DatesHelper;
 // Laravel facades
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Class PostRepository
+ * @package Lasallecms\Lasallecmsapi\Repositories
+ */
 class PostRepository extends BaseRepository
 {
     /**

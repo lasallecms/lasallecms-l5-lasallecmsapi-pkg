@@ -41,6 +41,7 @@ namespace Lasallecms\Lasallecmsapi\Repositories;
 
 
 // LaSalle Software
+use Lasallecms\Lasallecmsapi\Repositories\BaseRepository;
 use Lasallecms\Usermanagement\Models\User;
 
 // Laravel facades
@@ -49,6 +50,10 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * Class UserRepository
+ * @package Lasallecms\Lasallecmsapi\Repositories
+ */
 class UserRepository extends BaseRepository
 {
     /**

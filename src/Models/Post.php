@@ -146,7 +146,7 @@ class Post extends BaseModel
      *
      * @var string
      */
-    public $namespace_formprocessor = 'Lasallecms\Lasallecmsapi\Posts';
+    public $namespace_formprocessor = 'Lasallecms\Lasallecmsadmin\FormProcessing\Posts';
 
     /*
      * Class name of the CREATE Form Processor command

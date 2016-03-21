@@ -1,4 +1,5 @@
 <?php
+
 namespace Lasallecms\Lasallecmsapi\Models;
 
 /**
@@ -132,7 +133,7 @@ class Category extends BaseModel
      *
      * @var string
      */
-    public $namespace_formprocessor = 'Lasallecms\Lasallecmsapi\Categories';
+    public $namespace_formprocessor = 'Lasallecms\Lasallecmsadmin\FormProcessing\Categories';
 
     /*
      * Class name of the CREATE Form Processor command

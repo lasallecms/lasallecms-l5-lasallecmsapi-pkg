@@ -131,7 +131,7 @@ class Postupdate extends BaseModel
      *
      * @var string
      */
-    public $namespace_formprocessor = 'Lasallecms\Lasallecmsapi\Postupdates';
+    public $namespace_formprocessor = 'Lasallecms\Lasallecmsadmin\FormProcessing\Postupdates';
 
     /*
      * Class name of the CREATE Form Processor command

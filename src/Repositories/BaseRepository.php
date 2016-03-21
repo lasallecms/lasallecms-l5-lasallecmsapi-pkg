@@ -55,6 +55,10 @@ use Illuminate\Support\Facades\Schema;
 // Laravel classes
 use Illuminate\Container\Container as Container;
 
+/**
+ * Class BaseRepository
+ * @package Lasallecms\Lasallecmsapi\Repositories
+ */
 class BaseRepository
 {
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace Lasallecms\Lasallecmsapi\FormProcessing;
+namespace Lasallecms\Lasallecmsapi\FeaturedImageProcessing;
 
 /**
  *
