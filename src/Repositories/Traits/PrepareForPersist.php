@@ -469,9 +469,9 @@ trait PrepareForPersist
         $meta_description = filter_var($meta_description, FILTER_SANITIZE_STRING);
 
         // remove the encoded blank chars
-        $excerpt = str_replace("\xc2\xa0",'',$excerpt);
+        $meta_description = str_replace("\xc2\xa0",'',$meta_description);
 
-        $excerpt = trim($excerpt);
+        $meta_description = trim($meta_description);
         return $meta_description;
     }
 
@@ -499,7 +499,10 @@ trait PrepareForPersist
      * @return bool
      */
     public function prepareEnabledForPersist($enabled) {
-        if (($enabled == "") || $enabled == 0) return 0;
+
+        if (($enabled == "") || $enabled == 0) {
+            return 0;
+        }
         return 1;
     }
 
