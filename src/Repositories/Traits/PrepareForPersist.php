@@ -649,4 +649,31 @@ trait PrepareForPersist
 
         return $data;
     }
+
+
+    /**
+     * A generic wash of plain ol' text.
+     *
+     * The hope is to rid a string of HTML tags and PHP tags
+     *
+     * My admin form automation does not call this method, but I concocted it for my email package, and thought, gee,
+     * it would be nice to have it in this class for other custom form field processing.
+     *
+     * @param  string  $text
+     * @return string
+     */
+    public function genericWashText($text) {
+
+        // http://php.net/manual/en/function.strip-tags.php
+        $text = strip_tags($text);
+
+        // http://php.net/manual/en/filter.filters.sanitize.php
+        $text = filter_var($text, FILTER_SANITIZE_STRING);
+
+        // remove the encoded blank chars
+        $text = str_replace("\xc2\xa0",'',$text);
+        $text = trim($text);
+
+        return $text;
+    }
 }
