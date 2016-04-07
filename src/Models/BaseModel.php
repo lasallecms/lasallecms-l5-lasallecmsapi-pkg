@@ -48,6 +48,4 @@ class BaseModel extends Eloquent
         // parent's boot function should occur first
         parent::boot();
     }
-
-    //public function getdDo_not_delete_these_core_records
 }

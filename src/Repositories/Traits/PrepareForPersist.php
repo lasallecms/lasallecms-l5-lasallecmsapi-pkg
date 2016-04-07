@@ -672,8 +672,47 @@ trait PrepareForPersist
 
         // remove the encoded blank chars
         $text = str_replace("\xc2\xa0",'',$text);
+
+        // remove encoded apostrophe
+        $text = str_replace("&#39;",'',$text);
+
+        // final trim
         $text = trim($text);
 
         return $text;
+    }
+
+    /**
+     * A generic method to create a slug based on any string.
+     *
+     * The prepareSlugForPersis() method creates a slug from the "title" field. This method
+     * let's you create a slug from any string, not just from the "title" field.
+     *
+     * My admin form automation does not call this method, but I concocted it for my email package, and thought, gee,
+     * it would be nice to have it in this class for other custom form field processing.
+     *
+     * @param  string  $text
+     * @return string
+     */
+    public function genericCreateSlug($text) {
+
+        // Define a separator
+        $separator = '-';
+
+        // Convert all dashes/underscores into separator
+        $flip = $separator == '-' ? '_' : '-';
+
+        // Wash the $text, although it should already be washed
+        $slug = $this->genericWashText($text);
+
+        $slug = preg_replace('!['.preg_quote($flip).']+!u', $separator, $slug);
+
+        // Remove all characters that are not the separator, letters, numbers, or whitespace.
+        $slug = preg_replace('![^'.preg_quote($separator).'\pL\pN\s]+!u', '', mb_strtolower($slug));
+
+        // Replace all separator characters and whitespace by a single separator
+        $slug = preg_replace('!['.preg_quote($separator).'\s]+!u', $separator, $slug);
+
+        return $slug;
     }
 }
