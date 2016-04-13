@@ -46,6 +46,7 @@ use Lasallecms\Usermanagement\Models\User;
 
 // Laravel classes
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 // Laravel facades
 use Illuminate\Support\Facades\Auth;
@@ -159,7 +160,6 @@ class UserRepository extends BaseRepository
             ->value('id')
         ;
     }
-
 
 
     ///////////////////////////////////////////////////////////
