@@ -44,11 +44,17 @@ namespace Lasallecms\Lasallecmsapi\Repositories;
 use Lasallecms\Lasallecmsapi\Repositories\BaseRepository;
 use Lasallecms\Usermanagement\Models\User;
 
+// Laravel classes
+use Illuminate\Http\Request;
+
 // Laravel facades
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+
+// Third party classes
+use Carbon\Carbon;
 
 /**
  * Class UserRepository
@@ -63,14 +69,21 @@ class UserRepository extends BaseRepository
      */
     protected $model;
 
+    /**
+     * @var Illuminate\Http\Request
+     */
+    protected $request;
+
 
     /**
      * Inject the model
      *
-     * @param  Lasallecms\Lasallecmsapi\Models\User
+     * @param  Lasallecms\Lasallecmsapi\Models\User $model
+     * @param  Illuminate\Http\Request              $request
      */
-    public function __construct(User $model) {
-        $this->model = $model;
+    public function __construct(User $model, Request $request) {
+        $this->model   = $model;
+        $this->request = $request;
     }
 
 
@@ -404,6 +417,27 @@ class UserRepository extends BaseRepository
     }
 
 
+    /**
+     * UPDATE the user record for fields "last_login" and "last_login_ip"
+     *
+     * This method is duplicated in Lasallecms\Usermanagement\Helpers\TwoFactorAuthorization\TwoFactorAuthHelper
+     * Sorry ;-(
+     *
+     * @param  int    $userId          User ID
+     * @return void
+     */
+    public function updateUserRecordWithLastlogin($userId) {
+
+        $now = Carbon::now();
+        $ip  = $this->request->getClientIp();
+
+        DB::table('users')
+            ->where('id', $userId)
+            ->update(['last_login' => $now, 'last_login_ip' => $ip] )
+        ;
+    }
+
+
     ///////////////////////////////////////////////////////////
     //            The LaSalleCRM PEOPLES table               //
     ///////////////////////////////////////////////////////////
@@ -434,4 +468,77 @@ class UserRepository extends BaseRepository
 
         return "LaSalleCRM is not installed";
     }
+
+
+    ///////////////////////////////////////////////////////////
+    //                 TOKEN BASED LOGIN                     //
+    ///////////////////////////////////////////////////////////
+
+    /**
+     * UPDATE the "users" table with a login token
+     *
+     * @param  int  $userID    User's ID
+     */
+    public function createLoginToken($userID) {
+        $user = $this->getFind($userID);
+
+        $user->login_token            = hash_hmac('sha256', Str::random(40), 'secret');
+        $user->login_token_created_at = Carbon::now();
+
+        return $user->save();
+    }
+
+    /**
+     * Does a given login token exist in the users table?
+     *
+     * @param  string  $token
+     * @return mixed
+     */
+    public function isLoginTokenExist($token) {
+        return $this->model->where('login_token', $token)->first();
+    }
+
+    /**
+     * Has a login token expired?
+     *
+     * @param  object  $user     User object
+     * @return bool
+     */
+    public function isLoginTokenExpired($user) {
+
+        $startTime = strtotime($user->login_token_created_at);
+
+        $now = strtotime(Carbon::now());
+
+        // The time difference is in seconds, we want in minutes
+        $timeDiff = ($now - $startTime)/60;
+
+        $minutes2faFormIsLive = config('lasallecmsusermanagement.token_login_minutes_token_is_live');
+
+        if ($timeDiff > $minutes2faFormIsLive) {
+
+            // Login token has expired
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Remove the 'login_token' and 'login_token_created_at' fields.
+     *
+     * @param  int  $userID   The user's ID
+     * @return mixed
+     */
+    public function deleteUserLoginTokenFields($userID) {
+
+        $user = $this->getFind($userID);
+
+        $user->login_token            = '';
+        $user->login_token_created_at = '';
+
+        return $user->save();
+    }
+
+
 }
