@@ -151,7 +151,7 @@ class UserRepository extends BaseRepository
     /**
      * Find the user's ID from the user's email address
      *
-     * @param  string  $name
+     * @param  string  $email   Email address
      * @return int
      */
     public function findUserIdByEmail($email) {
@@ -160,6 +160,22 @@ class UserRepository extends BaseRepository
             ->value('id')
         ;
     }
+
+    /**
+     * Quick find the user name using the user's email address.
+     *
+     * The select must succeed because validateUserEmail() has already happened
+     *
+     * @param  string  $email   Email address
+     * @return string
+     */
+    public function findUserNameByEmail($email) {
+        return $this->model
+            ->where('email', $email)
+            ->value('name');
+        ;
+    }
+
 
 
     ///////////////////////////////////////////////////////////
@@ -468,77 +484,4 @@ class UserRepository extends BaseRepository
 
         return "LaSalleCRM is not installed";
     }
-
-
-    ///////////////////////////////////////////////////////////
-    //                 TOKEN BASED LOGIN                     //
-    ///////////////////////////////////////////////////////////
-
-    /**
-     * UPDATE the "users" table with a login token
-     *
-     * @param  int  $userID    User's ID
-     */
-    public function createLoginToken($userID) {
-        $user = $this->getFind($userID);
-
-        $user->login_token            = hash_hmac('sha256', Str::random(40), 'secret');
-        $user->login_token_created_at = Carbon::now();
-
-        return $user->save();
-    }
-
-    /**
-     * Does a given login token exist in the users table?
-     *
-     * @param  string  $token
-     * @return mixed
-     */
-    public function isLoginTokenExist($token) {
-        return $this->model->where('login_token', $token)->first();
-    }
-
-    /**
-     * Has a login token expired?
-     *
-     * @param  object  $user     User object
-     * @return bool
-     */
-    public function isLoginTokenExpired($user) {
-
-        $startTime = strtotime($user->login_token_created_at);
-
-        $now = strtotime(Carbon::now());
-
-        // The time difference is in seconds, we want in minutes
-        $timeDiff = ($now - $startTime)/60;
-
-        $minutes2faFormIsLive = config('lasallecmsusermanagement.token_login_minutes_token_is_live');
-
-        if ($timeDiff > $minutes2faFormIsLive) {
-
-            // Login token has expired
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * Remove the 'login_token' and 'login_token_created_at' fields.
-     *
-     * @param  int  $userID   The user's ID
-     * @return mixed
-     */
-    public function deleteUserLoginTokenFields($userID) {
-
-        $user = $this->getFind($userID);
-
-        $user->login_token            = '';
-        $user->login_token_created_at = '';
-
-        return $user->save();
-    }
-
-
 }
