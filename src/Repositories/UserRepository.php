@@ -127,28 +127,6 @@ class UserRepository extends BaseRepository
     }
 
     /**
-     * Is the "First Among Equals" user specified in the auth config (which is set by my user
-     * management package) actually in the database?
-     *
-     * @return bool
-     */
-    public function isFirstAmongEqualsUserInDatabase() {
-        $config = config('lasallecmsusermanagement.administrator_first_among_equals_email');
-
-        $results = count(
-            $this->model
-            ->where('email', '=', $config)
-            ->get()
-        );
-
-        if ( $results == 0 ) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
      * Find the user's ID from the user's email address
      *
      * @param  string  $email   Email address
@@ -174,6 +152,50 @@ class UserRepository extends BaseRepository
             ->where('email', $email)
             ->value('name');
         ;
+    }
+
+
+
+    ///////////////////////////////////////////////////////////
+    //             FIRST AMONG EQUALS USER                   //
+    ///////////////////////////////////////////////////////////
+
+    /**
+     * Get the First Among Equals User ID
+     *
+     * If all else fails, the First Among Equals user ID is "1"
+     *
+     * @return int
+     */
+    public function getFirstAmongEqualsUserID() {
+
+        if ($this->isFirstAmongEqualsUserInDatabase()) {
+            return $this->findUserIdByEmail( config('lasallecmsusermanagement.administrator_first_among_equals_email') );
+        }
+
+        return 1;
+    }
+
+    /**
+     * Is the "First Among Equals" user specified in the auth config (which is set by my user
+     * management package) actually in the database?
+     *
+     * @return bool
+     */
+    public function isFirstAmongEqualsUserInDatabase() {
+        $config = config('lasallecmsusermanagement.administrator_first_among_equals_email');
+
+        $results = count(
+            $this->model
+                ->where('email', '=', $config)
+                ->get()
+        );
+
+        if ( $results == 0 ) {
+            return false;
+        }
+
+        return true;
     }
 
 
