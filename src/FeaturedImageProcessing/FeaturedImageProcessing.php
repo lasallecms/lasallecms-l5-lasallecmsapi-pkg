@@ -256,7 +256,7 @@ class FeaturedImageProcessing
      * @return bool
      */
     public function doesImageFileExistOnServer($filename) {
-        if (\File::exists(public_path() . "/" . Config::get('lasallecmsfrontend.images_folder_uploaded'). '/'. $filename)) {
+        if (\File::exists($this->ImagesHelper->pathOfImagesUploadParentFolder() . "/" . Config::get('lasallecmsfrontend.images_folder_uploaded'). '/'. $filename)) {
             return true;
         }
 
@@ -276,7 +276,7 @@ class FeaturedImageProcessing
      */
     public function moveFile($filename) {
 
-        $destinationPath = public_path() . "/" . Config::get('lasallecmsfrontend.images_folder_uploaded');
+        $destinationPath = $this->ImagesHelper->pathOfImagesUploadParentFolder() . "/" . Config::get('lasallecmsfrontend.images_folder_uploaded');
 
         \Input::file('featured_image_upload')->move($destinationPath, $filename);
     }
