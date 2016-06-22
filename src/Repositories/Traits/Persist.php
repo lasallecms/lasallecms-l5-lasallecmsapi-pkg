@@ -71,14 +71,14 @@ trait Persist
             // Special handling for password fields
             if ($field['type'] == "password")
             {
-                $modelInstance->$field['name'] = bcrypt($data[$field['name']]);
+                $modelInstance->{$field['name']} = bcrypt($data[{$field['name']}]);
                 continue;
             }
 
             // Special handling for the composite_title field
             if ($field['name'] == "composite_title")
             {
-                $modelInstance->title = $data[$field['name']];
+                $modelInstance->title = $data[{$field['name']}];
                 continue;
             }
 
@@ -102,7 +102,7 @@ trait Persist
                 if (($field['type'] == "related_table") && ($field['related_pivot_table'] == "true"))  continue;
             }
 
-            $modelInstance->$field['name'] = $data[$field['name']];
+            $modelInstance->{$field['name']} = $data[{$field['name']}];
         }
 
         // Assign data to the standard database fields
@@ -141,7 +141,7 @@ trait Persist
                           ($data == null)  ||
                           (!$data)         ||
                           (empty($data)) ) ||
-                          ($data[$field['name']] == null)
+                          ($data[{$field['name']}] == null)
 
                         &&
                         ($field['nullable'])
@@ -153,7 +153,7 @@ trait Persist
                         // INSERT into the pivot table
                         $this->associateRelatedRecordsToNewRecord(
                             $modelInstance,
-                            $data[$field['name']],
+                            $data[{$field['name']}],
                             $field['related_namespace'],
                             $field['related_model_class']
                         );
@@ -204,7 +204,7 @@ trait Persist
                 $associatedRecord = $relatedRepository->getFind($associatedRecordId);
 
                 // save to the pivot table
-                $modelInstance->$relatedMethod()->save($associatedRecord);
+                $modelInstance->{$relatedMethod()}->save($associatedRecord);
             }
         }
     }
@@ -231,14 +231,14 @@ trait Persist
             // Special handling for password fields
             if ($field['type'] == "password")
             {
-                $modelInstance->$field['name'] = bcrypt($data[$field['name']]);
+                $modelInstance->{$field['name']} = bcrypt($data[{$field['name']}]);
                 continue;
             }
 
             // Special handling for the composite_title field
             if ($field['name'] == "composite_title")
             {
-                $modelInstance->title = $data[$field['name']];
+                $modelInstance->title = $data[{$field['name']}];
                 continue;
             }
 
@@ -262,7 +262,7 @@ trait Persist
                 if (($field['type'] == "related_table") && ($field['related_pivot_table'] == "true"))  continue;
             }
 
-            $modelInstance->$field['name'] = $data[$field['name']];
+            $modelInstance->{$field['name']} = $data[{$field['name']}];
         }
 
         // Assign data to the standard database fields
@@ -294,7 +294,7 @@ trait Persist
                         // INSERT into the pivot table
                         $this->associateRelatedRecordsToUpdatedRecord(
                             $modelInstance,
-                            $data[$field['name']],
+                            $data[{$field['name']}],
                             $field['related_model_class']
                         );
                     }
@@ -337,7 +337,7 @@ trait Persist
             $relatedMethod = strtolower($relatedModelClass);
 
             // (ii) detach the existing tag IDs and attach the new tag IDs, by using SYNC
-            $modelInstance->$relatedMethod()->sync($newIds);
+            $modelInstance->{$relatedMethod()}->sync($newIds);
         }
     }
 
