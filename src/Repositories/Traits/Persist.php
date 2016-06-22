@@ -71,7 +71,7 @@ trait Persist
             // Special handling for password fields
             if ($field['type'] == "password")
             {
-                $modelInstance->{$field['name']} = bcrypt($data[{$field['name']}]);
+                $modelInstance->{$field['name']} = bcrypt($data[$field['name']]);
                 continue;
             }
 
