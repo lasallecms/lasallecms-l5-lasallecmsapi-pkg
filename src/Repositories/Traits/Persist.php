@@ -337,7 +337,7 @@ trait Persist
             $relatedMethod = strtolower($relatedModelClass);
 
             // (ii) detach the existing tag IDs and attach the new tag IDs, by using SYNC
-            $modelInstance->{$relatedMethod()}->sync($newIds);
+            $modelInstance->$relatedMethod()->sync($newIds);
         }
     }
 
