@@ -204,7 +204,7 @@ trait Persist
                 $associatedRecord = $relatedRepository->getFind($associatedRecordId);
 
                 // save to the pivot table
-                $modelInstance->{$relatedMethod()}->save($associatedRecord);
+                $modelInstance->$relatedMethod()->save($associatedRecord);
             }
         }
     }
