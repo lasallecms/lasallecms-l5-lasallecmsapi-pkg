@@ -192,7 +192,7 @@ trait RepositorySpecificHTMLHelpers
         foreach ($relatedTableRecords as $relatedTableRecord)
         {
             // If this related record is attached to the primary record, then SELECTED it
-            if ( $selectedIdOFTheRelatedTable->$field['name'] == $relatedTableRecord->id)
+            if ( $selectedIdOFTheRelatedTable->{$field['name']} == $relatedTableRecord->id)
             {
                 $selected = ' selected="selected" ';
             } else {
