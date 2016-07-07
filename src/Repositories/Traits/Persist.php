@@ -34,6 +34,7 @@ namespace Lasallecms\Lasallecmsapi\Repositories\Traits;
 // Laravel facades
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 
 // Third party classes
@@ -93,6 +94,22 @@ trait Persist
                 continue;
             }
 
+            // Optionally encrypt text field with the crypt facade
+            // https://github.com/lasallecms/lasallecms-l5-lasallecmsapi-pkg/issues/35
+            // someone's gonna dislike my nested if's...
+            if ( ($field['type'] == "text-no-editor") || ($field['type'] == "text-with-editor") ) {
+
+                // does a crypt field exist?
+                if (isset($field['crypt'])) {
+
+                    // is the crypt field set to true?
+                    if ($field['crypt']) {
+                        $modelInstance->{$field['name']} = Crypt::encrypt($data[$field['name']]);
+                        continue;
+                    }
+                }
+            }
+
             // Related tables with pivot tables; that is, with one-to-many or many-to-many relationships
             // have their own save routine, since the relationships are stored in a separate database table
             // Note: empty 'related_pivot_table' in the field list produces exception error. Only 'related_table"
@@ -119,8 +136,6 @@ trait Persist
             $modelInstance->created_by       = config('lasallecmsusermanagement.auth_user_id_for_created_by_for_frontend_user_registration');
             $modelInstance->updated_by       = config('lasallecmsusermanagement.auth_user_id_for_created_by_for_frontend_user_registration');
         }
-
-
 
         // INSERT!
         $saveWentOk = $modelInstance->save();
@@ -251,6 +266,22 @@ trait Persist
                 // Ignore these form fields, as there are no such database fields.
                 // These fields are for featured image selection and processing only.
                 continue;
+            }
+
+            // Optionally encrypt text field with the crypt facade
+            // https://github.com/lasallecms/lasallecms-l5-lasallecmsapi-pkg/issues/35
+            // someone's gonna dislike my nested if's...
+            if ( ($field['type'] == "text-no-editor") || ($field['type'] == "text-with-editor") ) {
+
+                // does a crypt field exist?
+                if (isset($field['crypt'])) {
+
+                    // is the crypt field set to true?
+                    if ($field['crypt']) {
+                        $modelInstance->{$field['name']} = Crypt::encrypt($data[$field['name']]);
+                        continue;
+                    }
+                }
             }
 
             // Related tables with pivot tables; that is, with one-to-many or many-to-many relationships
