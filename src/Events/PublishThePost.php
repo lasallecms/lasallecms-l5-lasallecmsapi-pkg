@@ -41,7 +41,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 
-class SendPostToLaSalleCRMemailList extends Event
+class PublishThePost extends Event
 {
     use SerializesModels;
     /**

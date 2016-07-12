@@ -32,7 +32,7 @@ namespace Lasallecms\Lasallecmsapi\Listeners;
  */
 
 // LaSalle Software
-use Lasallecms\Lasallecmsapi\Events\SendPostToLaSalleCRMemailList;
+use Lasallecms\Lasallecmsapi\Events\PublishThePost;
 use Lasallecrm\Listmanagement\SendEmails\SendEmailsFromList;
 
 // Laravel classes
@@ -42,9 +42,10 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 class TriggerLaSalleCRMList implements ShouldQueue
 {
     /**
-     * @var Lasallecrm\Listmanagement\SendEmails\SendEmailsFromList
+     * @var Lasallecrm\Listmanagement\SendEmails\PublishThePost
      */
     protected $sendEmailsFromList;
+    
 
     /**
      * Create the event listener.
@@ -52,19 +53,17 @@ class TriggerLaSalleCRMList implements ShouldQueue
      * @param Lasallecrm\Listmanagement\SendEmails\SendEmailsFromList
      * @return void
      */
-    public function __construct(SendEmailsFromList $sendEmailsFromList)
-    {
+    public function __construct(SendEmailsFromList $sendEmailsFromList) {
         $this->sendEmailsFromList = $sendEmailsFromList;
     }
 
     /**
      * Handle the event.
      *
-     * @param  SendPostToLaSalleCRMemailList  $event
+     * @param  PublishThePost $event
      * @return void
      */
-    public function handle(SendPostToLaSalleCRMemailList $event)
-    {
+    public function handle(PublishThePost $event) {
         $this->sendEmailsFromList->sendEmails($event->data['id']['listID'], $event->data['id']);
     }
 }

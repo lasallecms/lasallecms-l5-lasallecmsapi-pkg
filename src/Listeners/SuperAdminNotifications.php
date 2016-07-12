@@ -32,7 +32,7 @@ namespace Lasallecms\Lasallecmsapi\Listeners;
  */
 
 // LaSalle Software
-use Lasallecms\Lasallecmsapi\Events\SendPostToLaSalleCRMemailList;
+use Lasallecms\Lasallecmsapi\Events\PublishThePost;
 use Lasallecrm\Listmanagement\SendEmails\SuperAdminNotificationSentToList;
 
 // Laravel classes
@@ -43,8 +43,8 @@ use Illuminate\Contracts\Queue\ShouldQueue;
  * Class SuperAdminNotificationSentToList
  * @package Lasallecms\Lasallecmsapi\Listeners
  */
-class SuperAdminNotifications implements ShouldQueue {
-
+class SuperAdminNotifications implements ShouldQueue
+{
     /**
      * @var  Lasallecrm\Listmanagement\SendEmails\SuperAdminNotificationSentToList
      */
@@ -56,11 +56,9 @@ class SuperAdminNotifications implements ShouldQueue {
      *
      * @return void
      */
-    public function __construct(SuperAdminNotificationSentToList $superAdminNotificationSentToList)
-    {
+    public function __construct(SuperAdminNotificationSentToList $superAdminNotificationSentToList) {
         $this->superAdminNotificationSentToList = $superAdminNotificationSentToList;
     }
-
 
     /**
      * Handle the event.
@@ -68,7 +66,7 @@ class SuperAdminNotifications implements ShouldQueue {
      * @param  SendPostToLaSalleCRMemailList $event
      * @return void
      */
-    public function handle(SendPostToLaSalleCRMemailList $event) {
+    public function handle(PublishThePost $event) {
         $this->superAdminNotificationSentToList->emailSuperAdministratorNotifications($event);
     }
 }

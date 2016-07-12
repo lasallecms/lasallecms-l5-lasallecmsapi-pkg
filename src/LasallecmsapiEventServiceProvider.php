@@ -47,9 +47,10 @@ class LasallecmsapiEventServiceProvider extends ServiceProvider
      * @var array
      */
     protected $listen = [
-        'Lasallecms\Lasallecmsapi\Events\SendPostToLaSalleCRMemailList' => [
+        'Lasallecms\Lasallecmsapi\Events\PublishThePost' => [
             'Lasallecms\Lasallecmsapi\Listeners\TriggerLaSalleCRMList',
             'Lasallecms\Lasallecmsapi\Listeners\SuperAdminNotifications',
+            'Lasallecms\Lasallecmsapi\Listeners\SendTweetAboutPost',
         ],
     ];
     /**

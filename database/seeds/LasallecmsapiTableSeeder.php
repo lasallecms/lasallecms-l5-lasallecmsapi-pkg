@@ -75,8 +75,8 @@ class LasallecmsapiTableSeeder extends Seeder
         ]);
 
         Lookup_workflow_status::create([
-            'title'       => 'Send to List',
-            'description' => 'Send to a LaSalleCRM email list.',
+            'title'       => 'Fire the Publish Event',
+            'description' => 'Send to a LaSalleCRM email list, post a Tweet, etc.',
             'enabled'     => 1,
             'created_at' => new DateTime,
             'created_by' => 1,
