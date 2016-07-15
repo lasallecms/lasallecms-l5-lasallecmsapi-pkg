@@ -65,5 +65,6 @@ class TriggerLaSalleCRMList implements ShouldQueue
      */
     public function handle(PublishThePost $event) {
         $this->sendEmailsFromList->sendEmails($event->data['id']['listID'], $event->data['id']);
+        \Log::info('Lasallecms\Lasallecmsapi\Listeners\TriggerLaSalleCRMList listener completed');
     }
 }

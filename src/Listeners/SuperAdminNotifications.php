@@ -68,5 +68,6 @@ class SuperAdminNotifications implements ShouldQueue
      */
     public function handle(PublishThePost $event) {
         $this->superAdminNotificationSentToList->emailSuperAdministratorNotifications($event);
+        \Log::info('Lasallecms\Lasallecmsapi\Listeners\SuperAdminNotifications listener completed');
     }
 }

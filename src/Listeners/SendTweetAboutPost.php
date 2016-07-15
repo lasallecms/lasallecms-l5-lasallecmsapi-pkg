@@ -65,5 +65,6 @@ class SendTweetAboutPost implements ShouldQueue
         $status .= " #Laravel";
 
         $twitter_status = Twitter::postTweet(['status' => $status, 'format' => 'json']);
+        \Log::info('Lasallecms\Lasallecmsapi\Listeners\SendTweetAboutPost listener completed');
     }
 }
